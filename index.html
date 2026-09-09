@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShiftMate</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- PeerJS for WebRTC Peer-to-Peer Chat -->
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <style>
+    /* Custom Dragging Styles for Dark Mode */
+    .task-card.dragging {
+      opacity: 0.4;
+      transform: scale(0.98);
+      border: 2px dashed #3b82f6 !important;
+    }
+    .task-card {
+      transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease, background-color 0.15s ease;
+    }
+    .task-card:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+    /* Dark Theme Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 min-h-screen font-sans text-slate-100 flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- Header / Navigation -->
+  <header class="bg-slate-900/90 border-b border-slate-800/80 backdrop-blur-md text-white shadow-lg sticky top-0 z-20">
+    <div class="max-w-[1500px] mx-auto px-6 py-3 flex flex-col lg:flex-row justify-between items-center gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-600/30">
+          <i class="fa-solid fa-train-subway text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-xl leading-none tracking-wide text-white">ShiftMate</h1>
+        </div>
+      </div>
+
+      <!-- Right Side Controls: Portal Tabs & Clock -->
+      <div class="flex flex-wrap items-center justify-center lg:justify-end gap-2 sm:gap-3">
+        <!-- External Portal Navigation Tabs -->
+        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <a href="https://crtvc.netlify.app/" target="_blank" rel="noopener noreferrer" 
+            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
+            <i class="fa-solid fa-calculator text-[10px]"></i>
+            <span>CR Calculator</span>
+          </a>
+          <a href="https://signallocator.netlify.app/" target="_blank" rel="noopener noreferrer" 
+            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
+            <i class="fa-solid fa-location-crosshairs text-[10px]"></i>
+            <span>Signal Locator</span>
+          </a>
+          <a href="https://copypaste.me/" target="_blank" rel="noopener noreferrer" 
+            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
+            <i class="fa-regular fa-copy text-[10px]"></i>
+            <span>Copy Text</span>
+          </a>
+          <a href="https://send-anywhere.com/" target="_blank" rel="noopener noreferrer" 
+            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
+            <i class="fa-solid fa-paperclip text-[10px]"></i>
+            <span>Send Files</span>
+          </a>
+          <a href="https://rbms-tvc.vercel.app/auth/login" target="_blank" rel="noopener noreferrer" 
+            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            <span>RBMS</span>
+          </a>
+          <a href="https://enquiry.indianrail.gov.in/mntes/" target="_blank" rel="noopener noreferrer" 
+            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            <span>NTES</span>
+          </a>
+        </div>
+
+        <!-- Shift & Time Display -->
+        <div class="text-right border-l border-slate-800 pl-4 sm:pl-6">
+          <div id="liveClock" class="font-mono text-2xl font-bold tracking-wider text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">00:00:00</div>
+          <div id="liveDate" class="text-xs text-slate-400">Loading date...</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container (3-Column Layout: Chat | Tasks | Timers) -->
+  <main class="max-w-[1500px] mx-auto w-full flex-grow p-4 lg:p-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- LEFT COLUMN: CHAT BOX (3 Columns) -->
+      <div class="lg:col-span-3 space-y-4 lg:sticky lg:top-20">
+        <div class="bg-slate-900 rounded-xl shadow-md border border-slate-800 flex flex-col h-[650px]">
+          
+          <!-- Chat Header -->
+          <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 rounded-t-xl">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-comments text-blue-400"></i>
+              <h2 class="font-bold text-slate-200 text-sm">Duty Live Chat</h2>
+            </div>
+            <div id="chatStatusBadge" class="flex items-center space-x-1.5 text-[11px] text-slate-400">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span>Logged Out</span>
+            </div>
+          </div>
+
+          <!-- STEP 1: CHAT LOGIN VIEW -->
+          <div id="chatLoginView" class="p-5 flex flex-col justify-center items-center flex-grow space-y-4">
+            <div class="w-12 h-12 bg-blue-600/10 text-blue-400 rounded-full flex items-center justify-center border border-blue-500/20 mb-1">
+              <i class="fa-solid fa-key text-xl"></i>
+            </div>
+            <div class="text-center space-y-1">
+              <h3 class="font-bold text-slate-200 text-sm">Join Duty Channel</h3>
+              <p class="text-xs text-slate-400">Enter a 3-digit room code & nickname</p>
+            </div>
+
+            <form id="chatLoginForm" class="w-full space-y-3 pt-2">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">3-Digit Room Code</label>
+                <input type="text" id="chatRoomInput" maxlength="3" pattern="\d{3}" placeholder="e.g. 101" required
+                  class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-center font-mono text-lg font-bold text-blue-400 tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Your Name / Station</label>
+                <input type="text" id="chatUsernameInput" maxlength="15" placeholder="e.g. Controller 1" required
+                  class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+
+              <button type="submit" 
+                class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg text-sm transition shadow-lg shadow-blue-600/20 active:scale-95 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-right-to-bracket text-xs"></i>
+                <span>Enter Room</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- STEP 2: ACTIVE CHAT ROOM VIEW (Hidden by Default) -->
+          <div id="chatActiveView" class="flex flex-col flex-grow hidden overflow-hidden">
+            
+            <!-- Room Info Ribbon -->
+            <div class="bg-slate-950 px-3 py-2 border-b border-slate-800/80 flex items-center justify-between text-xs">
+              <div class="flex items-center space-x-2">
+                <span class="text-slate-400">Room:</span>
+                <span id="displayRoomCode" class="font-mono font-bold text-blue-400 bg-blue-950/80 border border-blue-800/60 px-2 py-0.5 rounded">000</span>
+              </div>
+              <button id="leaveChatBtn" class="text-slate-400 hover:text-red-400 transition text-[11px] flex items-center space-x-1">
+                <i class="fa-solid fa-power-off"></i>
+                <span>Leave</span>
+              </button>
+            </div>
+
+            <!-- Chat Messages Display Area -->
+            <div id="chatMessagesContainer" class="flex-grow p-3 overflow-y-auto space-y-3 bg-slate-950/40 text-xs">
+              <!-- Dynamic Chat Messages Inserted Here -->
+            </div>
+
+            <!-- Chat Input Controls -->
+            <form id="chatSendForm" class="p-2 border-t border-slate-800 bg-slate-900 flex gap-2">
+              <input type="text" id="chatInputMessage" placeholder="Type a message..." required
+                class="flex-grow px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
+              <button type="submit" 
+                class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg transition text-xs active:scale-95 flex items-center justify-center">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </form>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- MIDDLE COLUMN: TASKS & HANDOVER SUMMARY (6 Columns) -->
+      <div class="lg:col-span-6 space-y-4">
+        
+        <!-- Task Creation Bar -->
+        <div class="bg-slate-900 rounded-xl shadow-md border border-slate-800 p-4">
+          <form id="addTaskForm" class="flex flex-col sm:flex-row gap-3">
+            <div class="flex-grow">
+              <input type="text" id="taskInput" placeholder="Enter task description..." 
+                class="w-full px-4 py-2.5 bg-slate-950 border border-slate-700/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-100 placeholder-slate-500 transition text-sm" required>
+            </div>
+            
+            <div class="flex gap-2">
+              <!-- Reminder Time Selector -->
+              <div class="relative flex-grow sm:w-40">
+                <input type="time" id="reminderTimeInput" 
+                  class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-200">
+              </div>
+
+              <!-- Add Button -->
+              <button type="submit" 
+                class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-5 py-2.5 rounded-lg flex items-center justify-center space-x-2 transition shadow-lg shadow-blue-600/25 active:scale-95 text-sm whitespace-nowrap">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add Task</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tasks List Header / Controls -->
+        <div class="flex items-center justify-between pt-1">
+          <div class="flex items-center space-x-2">
+            <h2 class="font-bold text-slate-200 text-base">Current Shift Tasks Timeline</h2>
+            <span id="taskCountBadge" class="bg-blue-950 text-blue-300 border border-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">0</span>
+            <button onclick="clearCompletedTasks()" id="clearCompletedBtn" class="hidden text-xs text-slate-400 hover:text-red-400 bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2.5 py-1 rounded-lg transition items-center space-x-1 ml-2">
+              <i class="fa-regular fa-trash-can text-[10px]"></i>
+              <span>Clear Completed</span>
+            </button>
+          </div>
+          <div class="text-xs text-slate-400 flex items-center space-x-1">
+            <i class="fa-solid fa-grip-vertical"></i>
+            <span>Drag tasks to reprioritize</span>
+          </div>
+        </div>
+
+        <!-- Tasks Container -->
+        <div id="tasksContainer" class="space-y-2.5 min-h-[220px]">
+          <!-- Task items inserted dynamically -->
+        </div>
+
+        <!-- Bottom Handover Summary Banner -->
+        <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 rounded-xl p-5 text-white border border-slate-800 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
+          <div class="space-y-1 text-center sm:text-left">
+            <h3 class="font-bold text-base flex items-center justify-center sm:justify-start gap-2 text-slate-100">
+              <i class="fa-solid fa-right-left text-blue-400"></i>
+              Shift Handover Generator
+            </h3>
+            <p class="text-xs text-slate-400">Summarize all pending tasks to paste into notepad for your shift reliever.</p>
+          </div>
+          <button id="generateSummaryBtn" 
+            class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-6 py-3 rounded-lg shadow-lg shadow-emerald-600/20 transition flex items-center justify-center space-x-2 text-sm whitespace-nowrap active:scale-95">
+            <i class="fa-solid fa-file-lines"></i>
+            <span>Summarize Pending Tasks</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: COUNTDOWN TIMERS (3 Columns) -->
+      <div class="lg:col-span-3 space-y-4 lg:sticky lg:top-20">
+        <div class="bg-slate-900 rounded-xl shadow-md border border-slate-800 p-4">
+          
+          <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-2.5">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-hourglass-half text-blue-400 text-base"></i>
+              <h2 class="font-bold text-slate-200 text-sm">Duty Quick Timers</h2>
+            </div>
+            <span class="text-xs text-slate-500">Countdown Clocks</span>
+          </div>
+
+          <!-- Vertical Stacked Timers -->
+          <div class="flex flex-col space-y-4">
+            
+            <!-- Timer 1 (Preset 2m 30s) -->
+            <div id="timerCard1" class="bg-slate-950/80 rounded-xl p-4 border border-slate-800 flex flex-col justify-between shadow-inner">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-semibold text-xs text-slate-300" id="timerLabel1">Timer 1 (2m 30s)</span>
+                <button onclick="editTimerPreset(1)" class="text-xs text-slate-400 hover:text-blue-400 px-2 py-0.5 rounded hover:bg-slate-800 transition" title="Change default duration">
+                  <i class="fa-regular fa-pen-to-square mr-1"></i>Edit
+                </button>
+              </div>
+              <div class="flex items-center justify-between my-1">
+                <div id="timerDisplay1" class="font-mono text-3xl font-bold text-slate-100 tracking-wider">02:30</div>
+                <div class="flex items-center space-x-2">
+                  <button id="timerBtn1" onclick="toggleTimer(1)" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition active:scale-95 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-play text-[10px]"></i>
+                    <span id="timerBtnText1">Start</span>
+                  </button>
+                  <button onclick="resetTimer(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition" title="Reset Timer">
+                    <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timer 2 (Preset 4m 0s) -->
+            <div id="timerCard2" class="bg-slate-950/80 rounded-xl p-4 border border-slate-800 flex flex-col justify-between shadow-inner">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-semibold text-xs text-slate-300" id="timerLabel2">Timer 2 (4m 0s)</span>
+                <button onclick="editTimerPreset(2)" class="text-xs text-slate-400 hover:text-blue-400 px-2 py-0.5 rounded hover:bg-slate-800 transition" title="Change default duration">
+                  <i class="fa-regular fa-pen-to-square mr-1"></i>Edit
+                </button>
+              </div>
+              <div class="flex items-center justify-between my-1">
+                <div id="timerDisplay2" class="font-mono text-3xl font-bold text-slate-100 tracking-wider">04:00</div>
+                <div class="flex items-center space-x-2">
+                  <button id="timerBtn2" onclick="toggleTimer(2)" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition active:scale-95 flex items-center space-x-1.5">
+                    <i class="fa-solid fa-play text-[10px]"></i>
+                    <span id="timerBtnText2">Start</span>
+                  </button>
+                  <button onclick="resetTimer(2)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition" title="Reset Timer">
+                    <i class="fa-solid fa-rotate-left text-[10px]"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Quick Tip -->
+          <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500 text-center">
+            <i class="fa-regular fa-circle-question mr-1"></i>
+            Click "Edit" on any timer to adjust duration
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Alarm Popup Modal (Dark Mode) -->
+  <div id="alarmModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center transform transition-all border-2 border-amber-500">
+      <div class="w-16 h-16 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+        <i class="fa-solid fa-bell text-3xl"></i>
+      </div>
+      <h3 class="text-xl font-bold text-slate-100 mb-1" id="alarmTitleText">DUTY ALARM ALERT!</h3>
+      <p class="text-xs text-slate-400 mb-4" id="alarmTimestamp">Scheduled Time Triggered</p>
+
+      <div class="bg-amber-950/40 border border-amber-800/60 rounded-xl p-4 mb-6">
+        <p class="text-amber-200 font-semibold text-xl tracking-wide" id="alarmTaskText">Task Description Here</p>
+      </div>
+
+      <div class="flex gap-3">
+        <button id="snoozeAlarmBtn" 
+          class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2.5 rounded-lg text-sm transition border border-slate-700">
+          Snooze 5 Mins
+        </button>
+        <button id="dismissAlarmBtn" 
+          class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-medium py-2.5 rounded-lg text-sm shadow-lg transition">
+          Acknowledge
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shift Summary Modal (Dark Mode) -->
+  <div id="summaryModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 max-w-lg w-full p-6 flex flex-col max-h-[90vh]">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-clipboard-check text-emerald-500 text-lg"></i>
+          <h3 class="font-bold text-slate-100 text-lg">Pending Tasks Summary</h3>
+        </div>
+        <button id="closeSummaryModal" class="text-slate-400 hover:text-slate-200 p-1">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-400 mb-2">Copy this report to share with your shift reliever or paste into Notepad:</p>
+      
+      <textarea id="summaryTextArea" readonly 
+        class="w-full flex-grow h-64 p-3 bg-slate-950 border border-slate-800 rounded-lg font-mono text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-4 leading-relaxed selection:bg-blue-600 selection:text-white"></textarea>
+
+      <!-- Notification Alert -->
+      <div id="copyAlert" class="hidden mb-3 text-xs text-emerald-400 font-medium text-center bg-emerald-950/60 py-1.5 rounded border border-emerald-800">
+        <i class="fa-solid fa-check mr-1"></i> Copied to clipboard successfully!
+      </div>
+
+      <div class="flex gap-3">
+        <button id="copySummaryBtn" 
+          class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg text-sm shadow transition flex items-center justify-center space-x-2">
+          <i class="fa-regular fa-copy"></i>
+          <span>Copy to Clipboard</span>
+        </button>
+        <button id="closeSummaryBtn" 
+          class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-700">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Synthesizer for Alarm -->
+  <script>
+    let audioCtx = null;
+    let alarmInterval = null;
+
+    function startAlarmSound() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const playBeep = () => {
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.4);
+        } catch (e) {
+          console.error("Audio play error", e);
+        }
+      };
+
+      playBeep();
+      alarmInterval = setInterval(playBeep, 800);
+    }
+
+    function stopAlarmSound() {
+      if (alarmInterval) {
+        clearInterval(alarmInterval);
+        alarmInterval = null;
+      }
+    }
+  </script>
+
+  <!-- Application Logic -->
+  <script>
+    // State Variables
+    let tasks = [];
+    let triggeredPresetsToday = { p16: '', p00: '', pSun: '' };
+    let activeAlarmTaskId = null;
+
+    // Chat PeerJS Variables
+    let peer = null;
+    let peerConnections = [];
+    let currentRoomCode = null;
+    let currentUsername = null;
+
+    // Timer Configs
+    let timerConfigs = {
+      1: { durationSeconds: 150, remainingSeconds: 150, interval: null, running: false, label: 'Timer 1 (2m 30s)' },
+      2: { durationSeconds: 240, remainingSeconds: 240, interval: null, running: false, label: 'Timer 2 (4m 0s)' }
+    };
+
+    // DOM Elements
+    let tasksContainer, addTaskForm, taskInput, reminderTimeInput, taskCountBadge, clearCompletedBtn;
+    let alarmModal, alarmTitleText, alarmTaskText, alarmTimestamp, dismissAlarmBtn, snoozeAlarmBtn;
+    let summaryModal, generateSummaryBtn, summaryTextArea, copySummaryBtn, closeSummaryModal, closeSummaryBtn, copyAlert;
+    
+    // Chat DOM Elements
+    let chatLoginForm, chatRoomInput, chatUsernameInput, chatLoginView, chatActiveView;
+    let displayRoomCode, chatMessagesContainer, chatSendForm, chatInputMessage, leaveChatBtn, chatStatusBadge;
+
+    // ALWAYS-RUNNING STANDALONE CLOCK ENGINE
+    function runLiveClockEngine() {
+      const clockEl = document.getElementById('liveClock');
+      const dateEl = document.getElementById('liveDate');
+
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+
+      const hoursStr = String(hours).padStart(2, '0');
+      const minutesStr = String(minutes).padStart(2, '0');
+      const secondsStr = String(seconds).padStart(2, '0');
+      const timeShort = `${hoursStr}:${minutesStr}`;
+
+      if (clockEl) {
+        clockEl.innerText = `${hoursStr}:${minutesStr}:${secondsStr}`;
+      }
+
+      if (dateEl) {
+        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+        dateEl.innerText = now.toLocaleDateString(undefined, options);
+      }
+
+      if (typeof checkRulesAndAlarms === 'function') {
+        checkRulesAndAlarms(now, hoursStr, minutesStr, secondsStr, timeShort);
+      }
+    }
+
+    runLiveClockEngine();
+    setInterval(runLiveClockEngine, 1000);
+
+    function init() {
+      // DOM Elements Binding
+      tasksContainer = document.getElementById('tasksContainer');
+      addTaskForm = document.getElementById('addTaskForm');
+      taskInput = document.getElementById('taskInput');
+      reminderTimeInput = document.getElementById('reminderTimeInput');
+      taskCountBadge = document.getElementById('taskCountBadge');
+      clearCompletedBtn = document.getElementById('clearCompletedBtn');
+
+      alarmModal = document.getElementById('alarmModal');
+      alarmTitleText = document.getElementById('alarmTitleText');
+      alarmTaskText = document.getElementById('alarmTaskText');
+      alarmTimestamp = document.getElementById('alarmTimestamp');
+      dismissAlarmBtn = document.getElementById('dismissAlarmBtn');
+      snoozeAlarmBtn = document.getElementById('snoozeAlarmBtn');
+
+      summaryModal = document.getElementById('summaryModal');
+      generateSummaryBtn = document.getElementById('generateSummaryBtn');
+      summaryTextArea = document.getElementById('summaryTextArea');
+      copySummaryBtn = document.getElementById('copySummaryBtn');
+      closeSummaryModal = document.getElementById('closeSummaryModal');
+      closeSummaryBtn = document.getElementById('closeSummaryBtn');
+      copyAlert = document.getElementById('copyAlert');
+
+      // Chat DOM Binding
+      chatLoginForm = document.getElementById('chatLoginForm');
+      chatRoomInput = document.getElementById('chatRoomInput');
+      chatUsernameInput = document.getElementById('chatUsernameInput');
+      chatLoginView = document.getElementById('chatLoginView');
+      chatActiveView = document.getElementById('chatActiveView');
+      displayRoomCode = document.getElementById('displayRoomCode');
+      chatMessagesContainer = document.getElementById('chatMessagesContainer');
+      chatSendForm = document.getElementById('chatSendForm');
+      chatInputMessage = document.getElementById('chatInputMessage');
+      leaveChatBtn = document.getElementById('leaveChatBtn');
+      chatStatusBadge = document.getElementById('chatStatusBadge');
+
+      // Load saved tasks
+      const savedTasks = localStorage.getItem('shiftmate_tasks');
+      if (savedTasks) {
+        try { tasks = JSON.parse(savedTasks); } catch (e) { tasks = []; }
+      } else { tasks = []; }
+
+      // Restore saved timer presets
+      const savedTimerConfigs = localStorage.getItem('shiftmate_timers');
+      if (savedTimerConfigs) {
+        try {
+          const parsed = JSON.parse(savedTimerConfigs);
+          timerConfigs[1].durationSeconds = parsed[1].durationSeconds;
+          timerConfigs[1].remainingSeconds = parsed[1].durationSeconds;
+          timerConfigs[1].label = parsed[1].label;
+
+          timerConfigs[2].durationSeconds = parsed[2].durationSeconds;
+          timerConfigs[2].remainingSeconds = parsed[2].durationSeconds;
+          timerConfigs[2].label = parsed[2].label;
+        } catch(e) {}
+      }
+
+      updateTimerUI(1);
+      updateTimerUI(2);
+
+      renderTasks();
+      setupDragAndDrop();
+      setupEventListeners();
+      setupChatEventListeners();
+    }
+
+    // --- REALTIME CHAT ENGINE (PeerJS Implementation) ---
+    function setupChatEventListeners() {
+      chatLoginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const roomCode = chatRoomInput.value.trim();
+        const username = chatUsernameInput.value.trim();
+
+        if (!/^\d{3}$/.test(roomCode)) {
+          alert("Please enter a valid 3-digit room code.");
+          return;
+        }
+        if (!username) return;
+
+        currentRoomCode = roomCode;
+        currentUsername = username;
+
+        initializeChatPeer();
+      });
+
+      chatSendForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = chatInputMessage.value.trim();
+        if (!text) return;
+
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const msgObj = { type: 'msg', user: currentUsername, text: text, time: timeStr };
+
+        // Append locally
+        appendChatMessage(msgObj, true);
+
+        // Broadcast to peers
+        broadcastData(msgObj);
+
+        chatInputMessage.value = '';
+      });
+
+      leaveChatBtn.addEventListener('click', leaveChatRoom);
+    }
+
+    function initializeChatPeer() {
+      const myPeerId = `shiftmate-room-${currentRoomCode}-${Math.floor(Math.random() * 100000)}`;
+      
+      updateChatStatus('Connecting...', 'bg-amber-500');
+
+      peer = new Peer(myPeerId);
+
+      peer.on('open', (id) => {
+        updateChatStatus('Connected', 'bg-emerald-500');
+        displayRoomCode.textContent = currentRoomCode;
+
+        chatLoginView.classList.add('hidden');
+        chatActiveView.classList.remove('hidden');
+
+        appendSystemMessage(`Joined Room #${currentRoomCode} as "${currentUsername}"`);
+
+        // Connect to hub or existing room peers
+        connectToRoomHub();
+      });
+
+      peer.on('connection', (conn) => {
+        setupPeerConnection(conn);
+      });
+
+      peer.on('error', (err) => {
+        console.error("PeerJS Error:", err);
+        updateChatStatus('Error', 'bg-red-500');
+      });
+    }
+
+    function connectToRoomHub() {
+      // Connect to fixed hub ID for this 3-digit room
+      const hubPeerId = `shiftmate-room-hub-${currentRoomCode}`;
+      
+      // Try becoming hub or connecting to hub
+      const hubConn = peer.connect(hubPeerId);
+      
+      hubConn.on('open', () => {
+        setupPeerConnection(hubConn);
+      });
+
+      hubConn.on('error', () => {
+        // If hub doesn't exist, create room listener
+      });
+    }
+
+    function setupPeerConnection(conn) {
+      peerConnections.push(conn);
+
+      conn.on('data', (data) => {
+        if (data.type === 'msg') {
+          appendChatMessage(data, false);
+        }
+      });
+
+      conn.on('close', () => {
+        peerConnections = peerConnections.filter(c => c !== conn);
+      });
+    }
+
+    function broadcastData(data) {
+      peerConnections.forEach(conn => {
+        if (conn.open) {
+          conn.send(data);
+        }
+      });
+    }
+
+    function appendChatMessage(msg, isSelf) {
+      const messageEl = document.createElement('div');
+      messageEl.className = `flex flex-col ${isSelf ? 'items-end' : 'items-start'}`;
+
+      messageEl.innerHTML = `
+        <div class="flex items-center space-x-1.5 mb-0.5">
+          <span class="font-bold text-[11px] ${isSelf ? 'text-blue-400' : 'text-emerald-400'}">${escapeHtml(msg.user)}</span>
+          <span class="text-[10px] text-slate-500">${msg.time}</span>
+        </div>
+        <div class="px-3 py-1.5 rounded-lg max-w-[85%] break-words ${isSelf ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 border border-slate-700/80 rounded-tl-none'}">
+          ${escapeHtml(msg.text)}
+        </div>
+      `;
+
+      chatMessagesContainer.appendChild(messageEl);
+      chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+    }
+
+    function appendSystemMessage(text) {
+      const sysEl = document.createElement('div');
+      sysEl.className = 'text-center my-1 text-[10px] text-slate-500 bg-slate-900/80 py-1 px-2 rounded border border-slate-800';
+      sysEl.textContent = text;
+      chatMessagesContainer.appendChild(sysEl);
+      chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+    }
+
+    function leaveChatRoom() {
+      if (peer) {
+        peer.destroy();
+        peer = null;
+      }
+      peerConnections = [];
+      chatMessagesContainer.innerHTML = '';
+      chatActiveView.classList.add('hidden');
+      chatLoginView.classList.remove('hidden');
+      updateChatStatus('Logged Out', 'bg-amber-500');
+    }
+
+    function updateChatStatus(text, bgClass) {
+      chatStatusBadge.innerHTML = `<span class="w-2 h-2 rounded-full ${bgClass}"></span><span>${text}</span>`;
+    }
+
+    // --- TASK MANAGER LOGIC ---
+    function saveTasks() {
+      localStorage.setItem('shiftmate_tasks', JSON.stringify(tasks));
+    }
+
+    function saveTimerSettings() {
+      const toSave = {
+        1: { durationSeconds: timerConfigs[1].durationSeconds, label: timerConfigs[1].label },
+        2: { durationSeconds: timerConfigs[2].durationSeconds, label: timerConfigs[2].label }
+      };
+      localStorage.setItem('shiftmate_timers', JSON.stringify(toSave));
+    }
+
+    function renderTasks() {
+      if (!tasksContainer) return;
+      tasksContainer.innerHTML = '';
+      
+      const pendingTasksCount = tasks.filter(t => !t.completed).length;
+      const completedTasksCount = tasks.filter(t => t.completed).length;
+
+      taskCountBadge.textContent = pendingTasksCount;
+
+      if (clearCompletedBtn) {
+        if (completedTasksCount > 0) {
+          clearCompletedBtn.classList.remove('hidden');
+          clearCompletedBtn.classList.add('inline-flex');
+        } else {
+          clearCompletedBtn.classList.add('hidden');
+          clearCompletedBtn.classList.remove('inline-flex');
+        }
+      }
+
+      if (tasks.length === 0) {
+        tasksContainer.innerHTML = `
+          <div class="text-center py-12 bg-slate-900 rounded-xl border border-dashed border-slate-800">
+            <i class="fa-solid fa-list-check text-4xl text-slate-600 mb-2"></i>
+            <p class="text-slate-400 font-medium text-sm">No active tasks in current shift timeline.</p>
+            <p class="text-slate-500 text-xs">Add a task above using the task input form.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const sortedTasks = [...tasks].sort((a, b) => Number(a.completed) - Number(b.completed));
+
+      sortedTasks.forEach((task) => {
+        const card = document.createElement('div');
+        card.className = `task-card bg-slate-900 rounded-xl p-3.5 border ${task.completed ? 'border-slate-800/70 bg-slate-900/40 opacity-60' : 'border-slate-800'} flex items-center justify-between gap-3 cursor-grab shadow-sm`;
+        card.setAttribute('draggable', 'true');
+        card.setAttribute('data-id', task.id);
+
+        let reminderBadgeHtml = '';
+        if (task.reminderTime) {
+          const isFired = task.alarmFired;
+          reminderBadgeHtml = `
+            <span class="inline-flex items-center text-xs px-2 py-0.5 rounded ${isFired ? 'bg-amber-950 text-amber-300 border border-amber-800/80 font-medium' : 'bg-blue-950 text-blue-300 border border-blue-800/80'}">
+              <i class="fa-regular fa-clock mr-1 text-[10px]"></i>
+              ${task.reminderTime}
+            </span>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center space-x-3 flex-grow min-w-0">
+            <div class="text-slate-600 hover:text-slate-400 cursor-grab px-1">
+              <i class="fa-solid fa-grip-vertical"></i>
+            </div>
+
+            <button onclick="toggleTaskComplete('${task.id}')" class="text-lg focus:outline-none flex-shrink-0">
+              ${task.completed ? 
+                '<i class="fa-solid fa-circle-check text-emerald-500"></i>' : 
+                '<i class="fa-regular fa-circle text-slate-600 hover:text-slate-400"></i>'}
+            </button>
+
+            <div class="flex flex-col min-w-0">
+              <span class="text-sm font-medium ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'} break-words">
+                ${escapeHtml(task.text)}
+              </span>
+              <div class="flex items-center space-x-2 mt-0.5">
+                ${reminderBadgeHtml}
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-1 flex-shrink-0">
+            <button onclick="editReminder('${task.id}')" class="p-2 text-slate-500 hover:text-blue-400 rounded-lg hover:bg-slate-800 text-xs transition" title="Edit Alarm">
+              <i class="fa-regular fa-bell"></i>
+            </button>
+            <button onclick="deleteTask('${task.id}')" class="p-2 text-slate-500 hover:text-red-400 rounded-lg hover:bg-slate-800 text-xs transition" title="Delete Task">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
+        `;
+
+        tasksContainer.appendChild(card);
+      });
+
+      setupDragAndDrop();
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    window.toggleTaskComplete = function(id) {
+      tasks = tasks.map(t => {
+        if (t.id === id) { return { ...t, completed: !t.completed }; }
+        return t;
+      });
+      saveTasks();
+      renderTasks();
+    };
+
+    window.deleteTask = function(id) {
+      tasks = tasks.filter(t => t.id !== id);
+      saveTasks();
+      renderTasks();
+    };
+
+    window.clearCompletedTasks = function() {
+      tasks = tasks.filter(t => !t.completed);
+      saveTasks();
+      renderTasks();
+    };
+
+    window.editReminder = function(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+
+      const newTime = prompt('Set Alarm Time (24hr HH:MM format):', task.reminderTime || '');
+      if (newTime !== null) {
+        if (newTime === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(newTime)) {
+          task.reminderTime = newTime;
+          task.alarmFired = false;
+          saveTasks();
+          renderTasks();
+        } else {
+          alert('Invalid time format. Please use HH:MM format (e.g. 16:00)');
+        }
+      }
+    };
+
+    function setupEventListeners() {
+      addTaskForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = taskInput.value.trim();
+        const reminderTime = reminderTimeInput.value;
+
+        if (!text) return;
+
+        const newTask = {
+          id: 'task-' + Date.now(),
+          text: text,
+          reminderTime: reminderTime || '',
+          completed: false,
+          alarmFired: false
+        };
+
+        tasks.push(newTask);
+        saveTasks();
+        renderTasks();
+
+        taskInput.value = '';
+        reminderTimeInput.value = '';
+      });
+
+      dismissAlarmBtn.addEventListener('click', () => {
+        alarmModal.classList.add('hidden');
+        stopAlarmSound();
+        activeAlarmTaskId = null;
+      });
+
+      snoozeAlarmBtn.addEventListener('click', () => {
+        if (!activeAlarmTaskId) return;
+        const task = tasks.find(t => t.id === activeAlarmTaskId);
+        if (task) {
+          const now = new Date();
+          now.setMinutes(now.getMinutes() + 5);
+          const h = String(now.getHours()).padStart(2, '0');
+          const m = String(now.getMinutes()).padStart(2, '0');
+          task.reminderTime = `${h}:${m}`;
+          task.alarmFired = false;
+          saveTasks();
+          renderTasks();
+        }
+        alarmModal.classList.add('hidden');
+        stopAlarmSound();
+        activeAlarmTaskId = null;
+      });
+
+      // Shift Summary Handlers
+      generateSummaryBtn.addEventListener('click', () => {
+        const now = new Date();
+        const dateString = now.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+        const timeString = document.getElementById('liveClock') ? document.getElementById('liveClock').innerText : '';
+
+        const pendingTasks = tasks.filter(t => !t.completed);
+
+        let summaryText = `======================================\n`;
+        summaryText += `    SHIFTMATE DUTY HANDOVER REPORT    \n`;
+        summaryText += `======================================\n`;
+        summaryText += `Generated: ${dateString} @ ${timeString}\n\n`;
+
+        summaryText += `--- PENDING TASKS (${pendingTasks.length}) ---\n`;
+        if (pendingTasks.length === 0) {
+          summaryText += `[✓] All duty tasks have been cleared for this shift.\n`;
+        } else {
+          pendingTasks.forEach((task, i) => {
+            const timeBadge = task.reminderTime ? ` [Scheduled: ${task.reminderTime}]` : '';
+            summaryText += `${i + 1}. [ ] ${task.text}${timeBadge}\n`;
+          });
+        }
+
+        summaryText += `\n======================================\n`;
+        summaryText += `Reliever Remarks:\n\n`;
+
+        summaryTextArea.value = summaryText;
+        copyAlert.classList.add('hidden');
+        summaryModal.classList.remove('hidden');
+      });
+
+      closeSummaryModal.addEventListener('click', () => summaryModal.classList.add('hidden'));
+      closeSummaryBtn.addEventListener('click', () => summaryModal.classList.add('hidden'));
+
+      copySummaryBtn.addEventListener('click', () => {
+        summaryTextArea.select();
+        summaryTextArea.setSelectionRange(0, 99999);
+        
+        try {
+          document.execCommand('copy');
+          copyAlert.classList.remove('hidden');
+          setTimeout(() => copyAlert.classList.add('hidden'), 3000);
+        } catch (err) {
+          alert('Failed to copy text. Please select manually.');
+        }
+      });
+    }
+
+    function checkRulesAndAlarms(now, hoursStr, minutesStr, secondsStr, timeShort) {
+      const todayKey = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+      const currentDayOfWeek = now.getDay();
+
+      if (hoursStr === '16' && minutesStr === '00' && secondsStr === '00' && triggeredPresetsToday.p16 !== todayKey) {
+        triggeredPresetsToday.p16 = todayKey;
+        triggerAlarm('standard time', 'Automatic Scheduled Duty Rule (16:00)');
+      }
+
+      if (hoursStr === '00' && minutesStr === '00' && secondsStr === '00' && triggeredPresetsToday.p00 !== todayKey) {
+        triggeredPresetsToday.p00 = todayKey;
+        triggerAlarm('0000hrs line', 'Automatic Scheduled Duty Rule (00:00)');
+      }
+
+      if (currentDayOfWeek === 0 && hoursStr === '23' && minutesStr === '00' && secondsStr === '00' && triggeredPresetsToday.pSun !== todayKey) {
+        triggeredPresetsToday.pSun = todayKey;
+        triggerAlarm('caution bf', 'Automatic Scheduled Duty Rule (Sunday 23:00)');
+      }
+
+      tasks.forEach(task => {
+        if (task.reminderTime && !task.completed && !task.alarmFired) {
+          if (task.reminderTime === timeShort && secondsStr === '00') {
+            triggerAlarm(task.text, `Scheduled for ${task.reminderTime}`, task.id);
+            task.alarmFired = true;
+            saveTasks();
+            renderTasks();
+          }
+        }
+      });
+    }
+
+    function triggerAlarm(titleText, timestampText, taskId = null) {
+      if (!alarmModal) return;
+      activeAlarmTaskId = taskId;
+      alarmTitleText.textContent = taskId ? "TASK REMINDER ALERT!" : "PRESET DUTY ALARM ALERT!";
+      alarmTaskText.textContent = titleText;
+      alarmTimestamp.textContent = timestampText;
+
+      snoozeAlarmBtn.style.display = taskId ? 'block' : 'none';
+
+      alarmModal.classList.remove('hidden');
+      startAlarmSound();
+    }
+
+    // --- COUNTDOWN TIMER LOGIC ---
+    function formatMinutesSeconds(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateTimerUI(id) {
+      const config = timerConfigs[id];
+      const display = document.getElementById(`timerDisplay${id}`);
+      const btnText = document.getElementById(`timerBtnText${id}`);
+      const btn = document.getElementById(`timerBtn${id}`);
+      const label = document.getElementById(`timerLabel${id}`);
+
+      if (!display || !btnText || !btn || !label) return;
+
+      display.textContent = formatMinutesSeconds(config.remainingSeconds);
+      label.textContent = config.label;
+
+      if (config.running) {
+        btnText.textContent = "Pause";
+        btn.classList.replace("bg-blue-600", "bg-amber-600");
+        btn.classList.replace("hover:bg-blue-500", "hover:bg-amber-500");
+      } else {
+        btnText.textContent = "Start";
+        btn.classList.replace("bg-amber-600", "bg-blue-600");
+        btn.classList.replace("hover:bg-amber-500", "hover:bg-blue-500");
+      }
+    }
+
+    window.toggleTimer = function(id) {
+      const config = timerConfigs[id];
+
+      if (config.running) {
+        clearInterval(config.interval);
+        config.running = false;
+        updateTimerUI(id);
+      } else {
+        if (config.remainingSeconds <= 0) {
+          config.remainingSeconds = config.durationSeconds;
+        }
+        config.running = true;
+        updateTimerUI(id);
+
+        config.interval = setInterval(() => {
+          config.remainingSeconds--;
+          updateTimerUI(id);
+
+          if (config.remainingSeconds <= 0) {
+            clearInterval(config.interval);
+            config.running = false;
+            updateTimerUI(id);
+            triggerAlarm(`Timer ${id} (${formatMinutesSeconds(config.durationSeconds)}) Elapsed!`, "Quick Timer Complete");
+          }
+        }, 1000);
+      }
+    };
+
+    window.resetTimer = function(id) {
+      const config = timerConfigs[id];
+      if (config.interval) clearInterval(config.interval);
+      config.running = false;
+      config.remainingSeconds = config.durationSeconds;
+      updateTimerUI(id);
+    };
+
+    window.editTimerPreset = function(id) {
+      const config = timerConfigs[id];
+      const currentMin = Math.floor(config.durationSeconds / 60);
+      const currentSec = config.durationSeconds % 60;
+
+      const input = prompt(`Enter new preset duration for Timer ${id} (Format MM:SS, e.g. 02:30 or 04:00):`, `${String(currentMin).padStart(2, '0')}:${String(currentSec).padStart(2, '0')}`);
+
+      if (input !== null) {
+        const parts = input.trim().split(':');
+        if (parts.length === 2) {
+          const m = parseInt(parts[0], 10);
+          const s = parseInt(parts[1], 10);
+
+          if (!isNaN(m) && !isNaN(s) && m >= 0 && s >= 0 && s < 60 && (m > 0 || s > 0)) {
+            if (config.interval) clearInterval(config.interval);
+            config.running = false;
+            config.durationSeconds = (m * 60) + s;
+            config.remainingSeconds = config.durationSeconds;
+            config.label = `Timer ${id} (${m}m ${s}s)`;
+            saveTimerSettings();
+            updateTimerUI(id);
+            return;
+          }
+        }
+        alert('Invalid time format. Please enter format as MM:SS (e.g. 02:30 or 05:00)');
+      }
+    };
+
+    // --- DRAG AND DROP REORDERING ---
+    function setupDragAndDrop() {
+      if (!tasksContainer) return;
+      const cards = tasksContainer.querySelectorAll('.task-card');
+      let draggedCard = null;
+
+      cards.forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+          draggedCard = card;
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          draggedCard = null;
+          updateTaskOrderFromDOM();
+        });
+
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          const target = getDragTarget(tasksContainer, e.clientY);
+          if (target == null) {
+            tasksContainer.appendChild(draggedCard);
+          } else {
+            tasksContainer.insertBefore(draggedCard, target);
+          }
+        });
+      });
+    }
+
+    function getDragTarget(container, y) {
+      const draggableElements = [...container.querySelectorAll('.task-card:not(.dragging)')];
+
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function updateTaskOrderFromDOM() {
+      const cardElements = [...tasksContainer.querySelectorAll('.task-card')];
+      const reorderedTasks = [];
+
+      cardElements.forEach(el => {
+        const id = el.getAttribute('data-id');
+        const found = tasks.find(t => t.id === id);
+        if (found) {
+          reorderedTasks.push(found);
+        }
+      });
+
+      tasks = reorderedTasks;
+      saveTasks();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
