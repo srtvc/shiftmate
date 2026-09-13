@@ -3,29 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ShiftMate</title>
-  <!-- Tailwind CSS -->
+  <title>ShiftMate - Duty & Yard Position Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- PeerJS for WebRTC Peer-to-Peer Chat -->
-  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
   <style>
-    /* Custom Dragging Styles for Dark Mode */
-    .task-card.dragging {
+    /* Custom Styling for Drag & Drop and Animations */
+    .task-card.dragging, .yard-rake.dragging {
       opacity: 0.4;
-      transform: scale(0.98);
+      transform: scale(0.96);
       border: 2px dashed #3b82f6 !important;
     }
-    .task-card {
+    .task-card, .yard-rake {
       transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease, background-color 0.15s ease;
     }
-    .task-card:hover {
+    .task-card:hover, .yard-rake:hover {
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+    .road-drop-zone.drag-over {
+      background-color: rgba(30, 41, 59, 0.95);
+      border-color: #3b82f6 !important;
+    }
+    .rake-drag-over {
+      outline: 2px solid #3b82f6;
+      outline-offset: 2px;
     }
     /* Dark Theme Scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
+      height: 6px;
     }
     ::-webkit-scrollbar-track {
       background: #0f172a;
@@ -41,42 +46,21 @@
 </head>
 <body class="bg-slate-950 min-h-screen font-sans text-slate-100 flex flex-col antialiased selection:bg-blue-600 selection:text-white">
 
-  <!-- Header / Navigation -->
+  <!-- HEADER NAVBAR -->
   <header class="bg-slate-900/90 border-b border-slate-800/80 backdrop-blur-md text-white shadow-lg sticky top-0 z-20">
-    <div class="max-w-[1500px] mx-auto px-6 py-3 flex flex-col lg:flex-row justify-between items-center gap-3">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
       <div class="flex items-center space-x-3">
         <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-600/30">
           <i class="fa-solid fa-train-subway text-2xl"></i>
         </div>
         <div>
           <h1 class="font-bold text-xl leading-none tracking-wide text-white">ShiftMate</h1>
+          <p class="text-[11px] text-slate-400 mt-0.5">Duty & Station Yard Position Manager</p>
         </div>
       </div>
 
-      <!-- Right Side Controls: Portal Tabs & Clock -->
-      <div class="flex flex-wrap items-center justify-center lg:justify-end gap-2 sm:gap-3">
-        <!-- External Portal Navigation Tabs -->
-        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <a href="https://crtvc.netlify.app/" target="_blank" rel="noopener noreferrer" 
-            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
-            <i class="fa-solid fa-calculator text-[10px]"></i>
-            <span>CR Calculator</span>
-          </a>
-          <a href="https://signallocator.netlify.app/" target="_blank" rel="noopener noreferrer" 
-            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
-            <i class="fa-solid fa-location-crosshairs text-[10px]"></i>
-            <span>Signal Locator</span>
-          </a>
-          <a href="https://copypaste.me/" target="_blank" rel="noopener noreferrer" 
-            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
-            <i class="fa-regular fa-copy text-[10px]"></i>
-            <span>Copy Text</span>
-          </a>
-          <a href="https://send-anywhere.com/" target="_blank" rel="noopener noreferrer" 
-            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
-            <i class="fa-solid fa-paperclip text-[10px]"></i>
-            <span>Send Files</span>
-          </a>
+      <div class="flex items-center space-x-4 sm:space-x-6">
+        <div class="hidden md:flex items-center flex-wrap gap-1.5">
           <a href="https://rbms-tvc.vercel.app/auth/login" target="_blank" rel="noopener noreferrer" 
             class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
             <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
@@ -87,171 +71,167 @@
             <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
             <span>NTES</span>
           </a>
+          <a href="https://crtvc.netlify.app" target="_blank" rel="noopener noreferrer" 
+            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
+            <i class="fa-solid fa-calculator text-[10px]"></i>
+            <span>CR Calc</span>
+          </a>
+          <a href="https://signallocator.netlify.app" target="_blank" rel="noopener noreferrer" 
+            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
+            <i class="fa-solid fa-location-dot text-[10px]"></i>
+            <span>Signal Finder</span>
+          </a>
+          <a href="https://cms.indianrail.gov.in/TRAINENQ/JSP/integrationFois/trainRunningDetailLoco.do?hmode=loadJSP" target="_blank" rel="noopener noreferrer" 
+            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
+            <i class="fa-solid fa-train text-[10px]"></i>
+            <span>CMS</span>
+          </a>
+          <a href="https://copypaste.me" target="_blank" rel="noopener noreferrer" 
+            class="bg-slate-800 hover:bg-blue-600 text-slate-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-700 hover:border-blue-500 transition shadow-sm flex items-center space-x-1.5 active:scale-95">
+            <i class="fa-solid fa-paste text-[10px]"></i>
+            <span>Text Copy</span>
+          </a>
         </div>
 
-        <!-- Shift & Time Display -->
         <div class="text-right border-l border-slate-800 pl-4 sm:pl-6">
-          <div id="liveClock" class="font-mono text-2xl font-bold tracking-wider text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">00:00:00</div>
-          <div id="liveDate" class="text-xs text-slate-400">Loading date...</div>
+          <div id="liveClock" class="font-mono text-xl sm:text-2xl font-bold tracking-wider text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]">--:--:--</div>
+          <div id="liveDate" class="text-[11px] sm:text-xs text-slate-400">Fetching live time...</div>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- Main Content Container (3-Column Layout: Chat | Tasks | Timers) -->
-  <main class="max-w-[1500px] mx-auto w-full flex-grow p-4 lg:p-6">
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="max-w-[1600px] mx-auto w-full flex-grow p-4 lg:p-6">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       
-      <!-- LEFT COLUMN: CHAT BOX (3 Columns) -->
-      <div class="lg:col-span-3 space-y-4 lg:sticky lg:top-20">
-        <div class="bg-slate-900 rounded-xl shadow-md border border-slate-800 flex flex-col h-[650px]">
+      <!-- YARD POSITION MANAGER COLUMN (LEFT - 6 COLS) -->
+      <div class="lg:col-span-6 space-y-4">
+        <div class="bg-slate-900 rounded-xl shadow-md border border-slate-800 flex flex-col min-h-[680px]">
           
-          <!-- Chat Header -->
-          <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/50 rounded-t-xl">
+          <!-- YARD HEADER & CONTROLS -->
+          <div class="p-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between bg-slate-900/80 rounded-t-xl gap-2">
             <div class="flex items-center space-x-2">
-              <i class="fa-solid fa-comments text-blue-400"></i>
-              <h2 class="font-bold text-slate-200 text-sm">Duty Live Chat</h2>
+              <i class="fa-solid fa-route text-emerald-400 text-base"></i>
+              <h2 class="font-bold text-slate-200 text-sm">Station Yard Position</h2>
+              <span id="yardCountBadge" class="bg-emerald-950 text-emerald-300 border border-emerald-800/80 text-[11px] font-semibold px-2 py-0.5 rounded-full">0 Stabled</span>
             </div>
-            <div id="chatStatusBadge" class="flex items-center space-x-1.5 text-[11px] text-slate-400">
-              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-              <span>Logged Out</span>
+
+            <!-- ROAD CONTROLS & CLEAR ALL -->
+            <div class="flex items-center space-x-1.5">
+              <button onclick="clearAllYardData()" class="text-xs bg-red-950/80 hover:bg-red-600 text-red-300 hover:text-white px-2.5 py-1 rounded-lg border border-red-800/80 transition flex items-center space-x-1 active:scale-95" title="Clear all stabled items from roads">
+                <i class="fa-regular fa-trash-can text-[10px]"></i>
+                <span>Clear Yard</span>
+              </button>
+
+              <div class="h-4 w-[1px] bg-slate-800 mx-1"></div>
+
+              <span class="text-xs text-slate-400 font-medium">Roads: <strong id="roadCountLabel" class="text-blue-400 font-mono">6</strong></span>
+              <button onclick="changeRoadCount(-1)" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 rounded-lg border border-slate-700 flex items-center justify-center transition" title="Decrease Roads">
+                <i class="fa-solid fa-minus text-xs"></i>
+              </button>
+              <button onclick="changeRoadCount(1)" class="w-7 h-7 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 rounded-lg border border-slate-700 flex items-center justify-center transition" title="Increase Roads">
+                <i class="fa-solid fa-plus text-xs"></i>
+              </button>
+              <button onclick="openRoadConfigModal()" class="text-xs bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white px-2 py-1 rounded-lg border border-slate-700 transition flex items-center space-x-1" title="Road Settings">
+                <i class="fa-solid fa-gear text-[10px]"></i>
+              </button>
             </div>
           </div>
 
-          <!-- STEP 1: CHAT LOGIN VIEW -->
-          <div id="chatLoginView" class="p-5 flex flex-col justify-center items-center flex-grow space-y-4">
-            <div class="w-12 h-12 bg-blue-600/10 text-blue-400 rounded-full flex items-center justify-center border border-blue-500/20 mb-1">
-              <i class="fa-solid fa-key text-xl"></i>
+          <!-- AUTOMATIC COLOR CODING LEGEND REMARK BANNER -->
+          <div class="px-3 py-2 bg-slate-950/90 border-b border-slate-800/80 text-[11px] text-slate-300 flex flex-wrap items-center justify-between gap-2">
+            <span class="font-semibold text-slate-400 flex items-center">
+              <i class="fa-solid fa-circle-info text-blue-400 mr-1.5"></i> Auto Color Legend:
+            </span>
+            <div class="flex items-center gap-3 text-[11px] font-medium">
+              <span class="flex items-center gap-1 text-blue-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>
+                <strong>Train</strong> (5 digits: starts 0,1,2,5,6)
+              </span>
+              <span class="flex items-center gap-1 text-emerald-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                <strong>Loco</strong> ('L' + digits)
+              </span>
+              <span class="flex items-center gap-1 text-amber-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span>
+                <strong>Machine</strong> (Letters / text)
+              </span>
             </div>
-            <div class="text-center space-y-1">
-              <h3 class="font-bold text-slate-200 text-sm">Join Duty Channel</h3>
-              <p class="text-xs text-slate-400">Enter a 3-digit room code & nickname</p>
-            </div>
-
-            <form id="chatLoginForm" class="w-full space-y-3 pt-2">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">3-Digit Room Code</label>
-                <input type="text" id="chatRoomInput" maxlength="3" pattern="\d{3}" placeholder="e.g. 101" required
-                  class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-center font-mono text-lg font-bold text-blue-400 tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500">
-              </div>
-
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Your Name / Station</label>
-                <input type="text" id="chatUsernameInput" maxlength="15" placeholder="e.g. Controller 1" required
-                  class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-              </div>
-
-              <button type="submit" 
-                class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg text-sm transition shadow-lg shadow-blue-600/20 active:scale-95 flex items-center justify-center space-x-2">
-                <i class="fa-solid fa-right-to-bracket text-xs"></i>
-                <span>Enter Room</span>
-              </button>
-            </form>
           </div>
 
-          <!-- STEP 2: ACTIVE CHAT ROOM VIEW (Hidden by Default) -->
-          <div id="chatActiveView" class="flex flex-col flex-grow hidden overflow-hidden">
-            
-            <!-- Room Info Ribbon -->
-            <div class="bg-slate-950 px-3 py-2 border-b border-slate-800/80 flex items-center justify-between text-xs">
-              <div class="flex items-center space-x-2">
-                <span class="text-slate-400">Room:</span>
-                <span id="displayRoomCode" class="font-mono font-bold text-blue-400 bg-blue-950/80 border border-blue-800/60 px-2 py-0.5 rounded">000</span>
-              </div>
-              <button id="leaveChatBtn" class="text-slate-400 hover:text-red-400 transition text-[11px] flex items-center space-x-1">
-                <i class="fa-solid fa-power-off"></i>
-                <span>Leave</span>
-              </button>
-            </div>
+          <!-- YARD ROADS CONTAINER (INDEPENDENT HORIZONTAL BOXES) -->
+          <div class="p-4 flex-grow space-y-3.5 overflow-y-auto max-h-[720px]" id="yardRoadsContainer">
+            <!-- Dynamically Rendered Horizontal Road Cards -->
+          </div>
 
-            <!-- Chat Messages Display Area -->
-            <div id="chatMessagesContainer" class="flex-grow p-3 overflow-y-auto space-y-3 bg-slate-950/40 text-xs">
-              <!-- Dynamic Chat Messages Inserted Here -->
-            </div>
-
-            <!-- Chat Input Controls -->
-            <form id="chatSendForm" class="p-2 border-t border-slate-800 bg-slate-900 flex gap-2">
-              <input type="text" id="chatInputMessage" placeholder="Type a message..." required
-                class="flex-grow px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500">
-              <button type="submit" 
-                class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg transition text-xs active:scale-95 flex items-center justify-center">
-                <i class="fa-solid fa-paper-plane"></i>
-              </button>
-            </form>
-
+          <div class="p-3 bg-slate-950 border-t border-slate-800/80 rounded-b-xl text-[11px] text-slate-400 flex items-center justify-between">
+            <span><i class="fa-solid fa-hand-pointer mr-1 text-slate-500"></i>Click stabled train for Release / Move / Reminder / Edit options</span>
+            <span><i class="fa-solid fa-arrows-up-down-left-right mr-1 text-slate-500"></i>Drag inside road to reorder or drag across roads</span>
           </div>
 
         </div>
       </div>
 
-      <!-- MIDDLE COLUMN: TASKS & HANDOVER SUMMARY (6 Columns) -->
-      <div class="lg:col-span-6 space-y-4">
+      <!-- SHIFT TIMELINE & TASKS COLUMN (MIDDLE - 3 COLS) -->
+      <div class="lg:col-span-3 space-y-4">
         
-        <!-- Task Creation Bar -->
         <div class="bg-slate-900 rounded-xl shadow-md border border-slate-800 p-4">
-          <form id="addTaskForm" class="flex flex-col sm:flex-row gap-3">
-            <div class="flex-grow">
-              <input type="text" id="taskInput" placeholder="Enter task description..." 
-                class="w-full px-4 py-2.5 bg-slate-950 border border-slate-700/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-slate-100 placeholder-slate-500 transition text-sm" required>
+          <form id="addTaskForm" class="flex flex-col gap-2.5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">New Shift Task</label>
+              <input type="text" id="taskInput" placeholder="Enter duty task description..." 
+                class="w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-100 placeholder-slate-500 transition text-xs" required>
             </div>
             
             <div class="flex gap-2">
-              <!-- Reminder Time Selector -->
-              <div class="relative flex-grow sm:w-40">
+              <div class="relative flex-grow">
                 <input type="time" id="reminderTimeInput" 
-                  class="w-full px-3 py-2.5 bg-slate-950 border border-slate-700/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-slate-200">
+                  class="w-full px-3 py-1.5 bg-slate-950 border border-slate-700/80 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs text-slate-200">
               </div>
 
-              <!-- Add Button -->
               <button type="submit" 
-                class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-5 py-2.5 rounded-lg flex items-center justify-center space-x-2 transition shadow-lg shadow-blue-600/25 active:scale-95 text-sm whitespace-nowrap">
-                <i class="fa-solid fa-plus"></i>
+                class="bg-blue-600 hover:bg-blue-500 text-white font-medium px-3.5 py-1.5 rounded-lg flex items-center justify-center space-x-1.5 transition shadow-lg shadow-blue-600/25 active:scale-95 text-xs whitespace-nowrap">
+                <i class="fa-solid fa-plus text-[10px]"></i>
                 <span>Add Task</span>
               </button>
             </div>
           </form>
         </div>
 
-        <!-- Tasks List Header / Controls -->
         <div class="flex items-center justify-between pt-1">
           <div class="flex items-center space-x-2">
-            <h2 class="font-bold text-slate-200 text-base">Current Shift Tasks Timeline</h2>
-            <span id="taskCountBadge" class="bg-blue-950 text-blue-300 border border-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">0</span>
-            <button onclick="clearCompletedTasks()" id="clearCompletedBtn" class="hidden text-xs text-slate-400 hover:text-red-400 bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2.5 py-1 rounded-lg transition items-center space-x-1 ml-2">
-              <i class="fa-regular fa-trash-can text-[10px]"></i>
-              <span>Clear Completed</span>
-            </button>
+            <h2 class="font-bold text-slate-200 text-sm">Shift Tasks Timeline</h2>
+            <span id="taskCountBadge" class="bg-blue-950 text-blue-300 border border-blue-800 text-xs font-semibold px-2 py-0.5 rounded-full">0</span>
           </div>
-          <div class="text-xs text-slate-400 flex items-center space-x-1">
-            <i class="fa-solid fa-grip-vertical"></i>
-            <span>Drag tasks to reprioritize</span>
-          </div>
+          <button onclick="clearCompletedTasks()" id="clearCompletedBtn" class="hidden text-xs text-slate-400 hover:text-red-400 bg-slate-900 hover:bg-slate-800 border border-slate-800 px-2 py-0.5 rounded-lg transition items-center space-x-1">
+            <i class="fa-regular fa-trash-can text-[10px]"></i>
+            <span>Clear Done</span>
+          </button>
         </div>
 
-        <!-- Tasks Container -->
         <div id="tasksContainer" class="space-y-2.5 min-h-[220px]">
-          <!-- Task items inserted dynamically -->
+          <!-- Tasks render here -->
         </div>
 
-        <!-- Bottom Handover Summary Banner -->
-        <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 rounded-xl p-5 text-white border border-slate-800 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-          <div class="space-y-1 text-center sm:text-left">
-            <h3 class="font-bold text-base flex items-center justify-center sm:justify-start gap-2 text-slate-100">
+        <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 rounded-xl p-4 text-white border border-slate-800 shadow-xl flex flex-col items-stretch gap-3 mt-4">
+          <div class="space-y-0.5">
+            <h3 class="font-bold text-sm flex items-center gap-2 text-slate-100">
               <i class="fa-solid fa-right-left text-blue-400"></i>
               Shift Handover Generator
             </h3>
-            <p class="text-xs text-slate-400">Summarize all pending tasks to paste into notepad for your shift reliever.</p>
+            <p class="text-xs text-slate-400">Generates full report including tasks & live yard position.</p>
           </div>
           <button id="generateSummaryBtn" 
-            class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-6 py-3 rounded-lg shadow-lg shadow-emerald-600/20 transition flex items-center justify-center space-x-2 text-sm whitespace-nowrap active:scale-95">
+            class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2.5 rounded-lg shadow-lg shadow-emerald-600/20 transition flex items-center justify-center space-x-2 text-xs active:scale-95">
             <i class="fa-solid fa-file-lines"></i>
-            <span>Summarize Pending Tasks</span>
+            <span>Generate Handover Report</span>
           </button>
         </div>
 
       </div>
 
-      <!-- RIGHT COLUMN: COUNTDOWN TIMERS (3 Columns) -->
+      <!-- QUICK TIMERS COLUMN (RIGHT - 3 COLS) -->
       <div class="lg:col-span-3 space-y-4 lg:sticky lg:top-20">
         <div class="bg-slate-900 rounded-xl shadow-md border border-slate-800 p-4">
           
@@ -260,50 +240,49 @@
               <i class="fa-solid fa-hourglass-half text-blue-400 text-base"></i>
               <h2 class="font-bold text-slate-200 text-sm">Duty Quick Timers</h2>
             </div>
-            <span class="text-xs text-slate-500">Countdown Clocks</span>
+            <span class="text-[11px] text-slate-500">Countdown</span>
           </div>
 
-          <!-- Vertical Stacked Timers -->
-          <div class="flex flex-col space-y-4">
+          <div class="flex flex-col space-y-3">
             
-            <!-- Timer 1 (Preset 2m 30s) -->
-            <div id="timerCard1" class="bg-slate-950/80 rounded-xl p-4 border border-slate-800 flex flex-col justify-between shadow-inner">
-              <div class="flex justify-between items-center mb-2">
+            <!-- TIMER CARD 1 -->
+            <div id="timerCard1" class="bg-slate-950/80 rounded-xl p-3.5 border border-slate-800 flex flex-col justify-between shadow-inner">
+              <div class="flex justify-between items-center mb-1.5">
                 <span class="font-semibold text-xs text-slate-300" id="timerLabel1">Timer 1 (2m 30s)</span>
-                <button onclick="editTimerPreset(1)" class="text-xs text-slate-400 hover:text-blue-400 px-2 py-0.5 rounded hover:bg-slate-800 transition" title="Change default duration">
+                <button onclick="editTimerPreset(1)" class="text-[11px] text-slate-400 hover:text-blue-400 px-1.5 py-0.5 rounded hover:bg-slate-800 transition">
                   <i class="fa-regular fa-pen-to-square mr-1"></i>Edit
                 </button>
               </div>
               <div class="flex items-center justify-between my-1">
-                <div id="timerDisplay1" class="font-mono text-3xl font-bold text-slate-100 tracking-wider">02:30</div>
-                <div class="flex items-center space-x-2">
-                  <button id="timerBtn1" onclick="toggleTimer(1)" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition active:scale-95 flex items-center space-x-1.5">
-                    <i class="fa-solid fa-play text-[10px]"></i>
+                <div id="timerDisplay1" class="font-mono text-2xl font-bold text-slate-100 tracking-wider">02:30</div>
+                <div class="flex items-center space-x-1.5">
+                  <button id="timerBtn1" onclick="toggleTimer(1)" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow transition active:scale-95 flex items-center space-x-1">
+                    <i class="fa-solid fa-play text-[9px]"></i>
                     <span id="timerBtnText1">Start</span>
                   </button>
-                  <button onclick="resetTimer(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition" title="Reset Timer">
+                  <button onclick="resetTimer(1)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1.5 rounded-lg transition">
                     <i class="fa-solid fa-rotate-left text-[10px]"></i>
                   </button>
                 </div>
               </div>
             </div>
 
-            <!-- Timer 2 (Preset 4m 0s) -->
-            <div id="timerCard2" class="bg-slate-950/80 rounded-xl p-4 border border-slate-800 flex flex-col justify-between shadow-inner">
-              <div class="flex justify-between items-center mb-2">
+            <!-- TIMER CARD 2 -->
+            <div id="timerCard2" class="bg-slate-950/80 rounded-xl p-3.5 border border-slate-800 flex flex-col justify-between shadow-inner">
+              <div class="flex justify-between items-center mb-1.5">
                 <span class="font-semibold text-xs text-slate-300" id="timerLabel2">Timer 2 (4m 0s)</span>
-                <button onclick="editTimerPreset(2)" class="text-xs text-slate-400 hover:text-blue-400 px-2 py-0.5 rounded hover:bg-slate-800 transition" title="Change default duration">
+                <button onclick="editTimerPreset(2)" class="text-[11px] text-slate-400 hover:text-blue-400 px-1.5 py-0.5 rounded hover:bg-slate-800 transition">
                   <i class="fa-regular fa-pen-to-square mr-1"></i>Edit
                 </button>
               </div>
               <div class="flex items-center justify-between my-1">
-                <div id="timerDisplay2" class="font-mono text-3xl font-bold text-slate-100 tracking-wider">04:00</div>
-                <div class="flex items-center space-x-2">
-                  <button id="timerBtn2" onclick="toggleTimer(2)" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg shadow transition active:scale-95 flex items-center space-x-1.5">
-                    <i class="fa-solid fa-play text-[10px]"></i>
+                <div id="timerDisplay2" class="font-mono text-2xl font-bold text-slate-100 tracking-wider">04:00</div>
+                <div class="flex items-center space-x-1.5">
+                  <button id="timerBtn2" onclick="toggleTimer(2)" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow transition active:scale-95 flex items-center space-x-1">
+                    <i class="fa-solid fa-play text-[9px]"></i>
                     <span id="timerBtnText2">Start</span>
                   </button>
-                  <button onclick="resetTimer(2)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-lg transition" title="Reset Timer">
+                  <button onclick="resetTimer(2)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1.5 rounded-lg transition">
                     <i class="fa-solid fa-rotate-left text-[10px]"></i>
                   </button>
                 </div>
@@ -312,10 +291,9 @@
 
           </div>
 
-          <!-- Quick Tip -->
-          <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-500 text-center">
+          <div class="mt-3 pt-2.5 border-t border-slate-800 text-[11px] text-slate-500 text-center">
             <i class="fa-regular fa-circle-question mr-1"></i>
-            Click "Edit" on any timer to adjust duration
+            Customizable quick countdown alarms
           </div>
 
         </div>
@@ -324,17 +302,109 @@
     </div>
   </main>
 
-  <!-- Alarm Popup Modal (Dark Mode) -->
-  <div id="alarmModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center transform transition-all border-2 border-amber-500">
-      <div class="w-16 h-16 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-        <i class="fa-solid fa-bell text-3xl"></i>
+  <!-- STABLED RAKE OPTIONS CONTEXT MODAL -->
+  <div id="rakeActionModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 max-w-sm w-full p-5 space-y-4">
+      <div class="flex justify-between items-start border-b border-slate-800 pb-3">
+        <div>
+          <span id="rakeModalRoadLabel" class="text-[11px] font-semibold text-blue-400 uppercase tracking-wider block">Road #1</span>
+          <h3 id="rakeModalTitle" class="text-base font-bold text-slate-100">Unit Details</h3>
+        </div>
+        <button onclick="closeRakeModal()" class="text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
       </div>
-      <h3 class="text-xl font-bold text-slate-100 mb-1" id="alarmTitleText">DUTY ALARM ALERT!</h3>
-      <p class="text-xs text-slate-400 mb-4" id="alarmTimestamp">Scheduled Time Triggered</p>
 
-      <div class="bg-amber-950/40 border border-amber-800/60 rounded-xl p-4 mb-6">
-        <p class="text-amber-200 font-semibold text-xl tracking-wide" id="alarmTaskText">Task Description Here</p>
+      <div class="grid grid-cols-2 gap-2.5">
+        <button onclick="triggerRakeAction('release')" class="flex items-center space-x-2.5 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/80 p-3 rounded-xl transition text-left active:scale-95">
+          <i class="fa-solid fa-right-from-bracket text-lg text-red-400"></i>
+          <div>
+            <div class="font-bold text-xs">Release</div>
+            <div class="text-[10px] text-red-400/80">Clear from road</div>
+          </div>
+        </button>
+
+        <button onclick="triggerRakeAction('move')" class="flex items-center space-x-2.5 bg-blue-950/60 hover:bg-blue-900/80 text-blue-300 border border-blue-800/80 p-3 rounded-xl transition text-left active:scale-95">
+          <i class="fa-solid fa-truck-ramp-box text-lg text-blue-400"></i>
+          <div>
+            <div class="font-bold text-xs">Move Road</div>
+            <div class="text-[10px] text-blue-400/80">Transfer road</div>
+          </div>
+        </button>
+
+        <button onclick="triggerRakeAction('reminder')" class="flex items-center space-x-2.5 bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border border-amber-800/80 p-3 rounded-xl transition text-left active:scale-95">
+          <i class="fa-solid fa-bell text-lg text-amber-400"></i>
+          <div>
+            <div class="font-bold text-xs">Set Reminder</div>
+            <div class="text-[10px] text-amber-400/80">Buzzer alarm</div>
+          </div>
+        </button>
+
+        <button onclick="triggerRakeAction('edit')" class="flex items-center space-x-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 p-3 rounded-xl transition text-left active:scale-95">
+          <i class="fa-solid fa-pen-to-square text-lg text-slate-400"></i>
+          <div>
+            <div class="font-bold text-xs">Edit Details</div>
+            <div class="text-[10px] text-slate-400">Change name/text</div>
+          </div>
+        </button>
+      </div>
+
+      <div id="rakeReminderStatus" class="text-xs text-amber-400 bg-amber-950/40 p-2 rounded-lg border border-amber-800/50 hidden">
+        <i class="fa-regular fa-clock mr-1"></i> Active Alarm set for <span id="rakeReminderTimeText" class="font-mono font-bold"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROAD CONFIGURATION MODAL -->
+  <div id="roadConfigModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 max-w-sm w-full p-5 space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-slate-100 flex items-center space-x-2">
+          <i class="fa-solid fa-sliders text-blue-400"></i>
+          <span>Station Yard Configuration</span>
+        </h3>
+        <button onclick="closeRoadConfigModal()" class="text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Total Number of Yard Roads (1 to 20)</label>
+          <div class="flex items-center space-x-2">
+            <button onclick="changeRoadCount(-1)" class="w-10 h-10 bg-slate-800 hover:bg-slate-700 text-slate-200 text-lg font-bold rounded-lg border border-slate-700 flex items-center justify-center transition">-</button>
+            <input type="number" id="roadCountInput" min="1" max="20" value="6"
+              class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-center text-xl font-bold">
+            <button onclick="changeRoadCount(1)" class="w-10 h-10 bg-slate-800 hover:bg-slate-700 text-slate-200 text-lg font-bold rounded-lg border border-slate-700 flex items-center justify-center transition">+</button>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed">
+          Adjust total station roads to match your yard layout. Units on removed high-index roads will be automatically reassigned to the highest available road.
+        </p>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="saveRoadConfigFromInput()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg text-sm transition">
+          Apply & Save
+        </button>
+        <button onclick="closeRoadConfigModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm transition">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUZZER / ALARM MODAL -->
+  <div id="alarmModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center border-2 border-amber-500">
+      <div class="w-16 h-16 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+        <i class="fa-solid fa-bullhorn text-3xl"></i>
+      </div>
+      <h3 class="text-xl font-bold text-slate-100 mb-1" id="alarmTitleText">YARD ALARM ALERT!</h3>
+      <p class="text-xs text-slate-400 mb-4" id="alarmTimestamp">Scheduled Alarm Triggered</p>
+
+      <div class="bg-amber-950/50 border border-amber-800/80 rounded-xl p-4 mb-6">
+        <p class="text-amber-200 font-bold text-xl tracking-wide" id="alarmTaskText">16345 Express Departure</p>
       </div>
 
       <div class="flex gap-3">
@@ -344,31 +414,30 @@
         </button>
         <button id="dismissAlarmBtn" 
           class="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-medium py-2.5 rounded-lg text-sm shadow-lg transition">
-          Acknowledge
+          Acknowledge & Mute
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Shift Summary Modal (Dark Mode) -->
+  <!-- SHIFT SUMMARY MODAL -->
   <div id="summaryModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 max-w-lg w-full p-6 flex flex-col max-h-[90vh]">
+    <div class="bg-slate-900 rounded-xl shadow-2xl border border-slate-800 max-w-xl w-full p-6 flex flex-col max-h-[90vh]">
       <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
         <div class="flex items-center space-x-2">
           <i class="fa-solid fa-clipboard-check text-emerald-500 text-lg"></i>
-          <h3 class="font-bold text-slate-100 text-lg">Pending Tasks Summary</h3>
+          <h3 class="font-bold text-slate-100 text-lg">Shift Handover & Yard Report</h3>
         </div>
         <button id="closeSummaryModal" class="text-slate-400 hover:text-slate-200 p-1">
           <i class="fa-solid fa-xmark text-xl"></i>
         </button>
       </div>
 
-      <p class="text-xs text-slate-400 mb-2">Copy this report to share with your shift reliever or paste into Notepad:</p>
+      <p class="text-xs text-slate-400 mb-2">Copy this report for shift handover or paste into official logbook:</p>
       
       <textarea id="summaryTextArea" readonly 
-        class="w-full flex-grow h-64 p-3 bg-slate-950 border border-slate-800 rounded-lg font-mono text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-4 leading-relaxed selection:bg-blue-600 selection:text-white"></textarea>
+        class="w-full flex-grow h-72 p-3 bg-slate-950 border border-slate-800 rounded-lg font-mono text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none mb-4 leading-relaxed selection:bg-blue-600 selection:text-white"></textarea>
 
-      <!-- Notification Alert -->
       <div id="copyAlert" class="hidden mb-3 text-xs text-emerald-400 font-medium text-center bg-emerald-950/60 py-1.5 rounded border border-emerald-800">
         <i class="fa-solid fa-check mr-1"></i> Copied to clipboard successfully!
       </div>
@@ -387,7 +456,7 @@
     </div>
   </div>
 
-  <!-- Audio Synthesizer for Alarm -->
+  <!-- AUDIO BUZZER CONTROLLER -->
   <script>
     let audioCtx = null;
     let alarmInterval = null;
@@ -400,27 +469,30 @@
         audioCtx.resume();
       }
 
-      const playBeep = () => {
+      const playBuzzerPulse = () => {
         try {
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+          
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(650, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.35);
+
+          gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
 
           osc.connect(gain);
           gain.connect(audioCtx.destination);
 
           osc.start();
-          osc.stop(audioCtx.currentTime + 0.4);
+          osc.stop(audioCtx.currentTime + 0.35);
         } catch (e) {
-          console.error("Audio play error", e);
+          console.error("Audio buzzer error", e);
         }
       };
 
-      playBeep();
-      alarmInterval = setInterval(playBeep, 800);
+      playBuzzerPulse();
+      alarmInterval = setInterval(playBuzzerPulse, 500);
     }
 
     function stopAlarmSound() {
@@ -431,66 +503,95 @@
     }
   </script>
 
-  <!-- Application Logic -->
+  <!-- APPLICATION CORE SCRIPT -->
   <script>
-    // State Variables
+    // --- STATE VARIABLES ---
     let tasks = [];
-    let triggeredPresetsToday = { p16: '', p00: '', pSun: '' };
+    let yardData = {
+      totalRoads: 6,
+      stabledUnits: [] // empty by default - no prefilled data
+    };
+
+    let selectedRakeId = null;
     let activeAlarmTaskId = null;
+    let activeAlarmRakeId = null;
+    let triggeredPresetsToday = { p16: '', p00: '', pSun: '' };
 
-    // Chat PeerJS Variables
-    let peer = null;
-    let peerConnections = [];
-    let currentRoomCode = null;
-    let currentUsername = null;
+    // COLOR BADGES STYLES
+    const COLOR_STYLES = {
+      blue: { bg: 'bg-blue-900/80', border: 'border-blue-500', text: 'text-blue-100', icon: 'fa-train text-blue-300' },
+      emerald: { bg: 'bg-emerald-900/80', border: 'border-emerald-500', text: 'text-emerald-100', icon: 'fa-train-subway text-emerald-300' },
+      amber: { bg: 'bg-amber-900/80', border: 'border-amber-500', text: 'text-amber-100', icon: 'fa-screwdriver-wrench text-amber-300' }
+    };
 
-    // Timer Configs
+    /**
+     * AUTO COLOR CODING ENGINE
+     * 1. Locomotive: Digits entered after letter 'L' (or starts with L / contains LOCO), e.g., L31204, L-1234, LOCO 30201 -> GREEN (emerald)
+     * 2. Train: 5-digit number starting with 0, 1, 2, 5, or 6 -> BLUE (blue)
+     * 3. Machine: Letters / machine titles -> YELLOW (amber)
+     */
+    function autoDetectUnitCategory(inputText) {
+      const text = inputText.trim();
+      
+      // Loco Rule: 'L' followed by numbers, or 'LOCO' keyword
+      const locoRegex = /L[-_\s]?\d+/i;
+      const locoWordRegex = /\bLOCO\b/i;
+
+      // Train Rule: 5-digit number starting with 0, 1, 2, 5, or 6
+      const trainRegex = /\b[01256]\d{4}\b/;
+
+      if (locoRegex.test(text) || locoWordRegex.test(text)) {
+        return 'emerald'; // Green box for Locomotive
+      } else if (trainRegex.test(text)) {
+        return 'blue'; // Blue box for Train
+      } else {
+        return 'amber'; // Yellow box for Machine / Text
+      }
+    }
+
+    // TIMER CONFIGS
     let timerConfigs = {
       1: { durationSeconds: 150, remainingSeconds: 150, interval: null, running: false, label: 'Timer 1 (2m 30s)' },
       2: { durationSeconds: 240, remainingSeconds: 240, interval: null, running: false, label: 'Timer 2 (4m 0s)' }
     };
 
-    // DOM Elements
+    // DOM ELEMENTS
     let tasksContainer, addTaskForm, taskInput, reminderTimeInput, taskCountBadge, clearCompletedBtn;
     let alarmModal, alarmTitleText, alarmTaskText, alarmTimestamp, dismissAlarmBtn, snoozeAlarmBtn;
     let summaryModal, generateSummaryBtn, summaryTextArea, copySummaryBtn, closeSummaryModal, closeSummaryBtn, copyAlert;
-    
-    // Chat DOM Elements
-    let chatLoginForm, chatRoomInput, chatUsernameInput, chatLoginView, chatActiveView;
-    let displayRoomCode, chatMessagesContainer, chatSendForm, chatInputMessage, leaveChatBtn, chatStatusBadge;
+    let yardRoadsContainer, rakeActionModal, roadConfigModal;
 
-    // ALWAYS-RUNNING STANDALONE CLOCK ENGINE
-    function runLiveClockEngine() {
-      const clockEl = document.getElementById('liveClock');
-      const dateEl = document.getElementById('liveDate');
+    // --- LIVE CLOCK ENGINE ---
+    function updateLiveClock() {
+      try {
+        const clockEl = document.getElementById('liveClock');
+        const dateEl = document.getElementById('liveDate');
+        const now = new Date();
 
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes();
-      const seconds = now.getSeconds();
+        const hoursStr = String(now.getHours()).padStart(2, '0');
+        const minutesStr = String(now.getMinutes()).padStart(2, '0');
+        const secondsStr = String(now.getSeconds()).padStart(2, '0');
+        const timeShort = `${hoursStr}:${minutesStr}`;
 
-      const hoursStr = String(hours).padStart(2, '0');
-      const minutesStr = String(minutes).padStart(2, '0');
-      const secondsStr = String(seconds).padStart(2, '0');
-      const timeShort = `${hoursStr}:${minutesStr}`;
+        if (clockEl) {
+          clockEl.innerText = `${hoursStr}:${minutesStr}:${secondsStr}`;
+        }
 
-      if (clockEl) {
-        clockEl.innerText = `${hoursStr}:${minutesStr}:${secondsStr}`;
-      }
+        if (dateEl) {
+          const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+          dateEl.innerText = now.toLocaleDateString(undefined, options);
+        }
 
-      if (dateEl) {
-        const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
-        dateEl.innerText = now.toLocaleDateString(undefined, options);
-      }
-
-      if (typeof checkRulesAndAlarms === 'function') {
         checkRulesAndAlarms(now, hoursStr, minutesStr, secondsStr, timeShort);
+      } catch (err) {
+        console.error("Live clock update error:", err);
       }
     }
 
-    runLiveClockEngine();
-    setInterval(runLiveClockEngine, 1000);
+    // Auto-update live clock every second
+    setInterval(updateLiveClock, 1000);
 
+    // Initializer function
     function init() {
       // DOM Elements Binding
       tasksContainer = document.getElementById('tasksContainer');
@@ -515,199 +616,413 @@
       closeSummaryBtn = document.getElementById('closeSummaryBtn');
       copyAlert = document.getElementById('copyAlert');
 
-      // Chat DOM Binding
-      chatLoginForm = document.getElementById('chatLoginForm');
-      chatRoomInput = document.getElementById('chatRoomInput');
-      chatUsernameInput = document.getElementById('chatUsernameInput');
-      chatLoginView = document.getElementById('chatLoginView');
-      chatActiveView = document.getElementById('chatActiveView');
-      displayRoomCode = document.getElementById('displayRoomCode');
-      chatMessagesContainer = document.getElementById('chatMessagesContainer');
-      chatSendForm = document.getElementById('chatSendForm');
-      chatInputMessage = document.getElementById('chatInputMessage');
-      leaveChatBtn = document.getElementById('leaveChatBtn');
-      chatStatusBadge = document.getElementById('chatStatusBadge');
+      yardRoadsContainer = document.getElementById('yardRoadsContainer');
+      rakeActionModal = document.getElementById('rakeActionModal');
+      roadConfigModal = document.getElementById('roadConfigModal');
 
-      // Load saved tasks
+      // Update Live Clock immediately
+      updateLiveClock();
+
+      // Load Saved Tasks
       const savedTasks = localStorage.getItem('shiftmate_tasks');
       if (savedTasks) {
         try { tasks = JSON.parse(savedTasks); } catch (e) { tasks = []; }
-      } else { tasks = []; }
+      }
 
-      // Restore saved timer presets
+      // Load Saved Yard Position Data (No hardcoded sample data)
+      const savedYard = localStorage.getItem('shiftmate_yard');
+      if (savedYard) {
+        try {
+          const parsed = JSON.parse(savedYard);
+          yardData.totalRoads = parsed.totalRoads || 6;
+          yardData.stabledUnits = parsed.stabledUnits || [];
+        } catch (e) {
+          yardData = { totalRoads: 6, stabledUnits: [] };
+        }
+      } else {
+        yardData = { totalRoads: 6, stabledUnits: [] };
+      }
+
+      // Restore Saved Timers
       const savedTimerConfigs = localStorage.getItem('shiftmate_timers');
       if (savedTimerConfigs) {
         try {
           const parsed = JSON.parse(savedTimerConfigs);
-          timerConfigs[1].durationSeconds = parsed[1].durationSeconds;
-          timerConfigs[1].remainingSeconds = parsed[1].durationSeconds;
-          timerConfigs[1].label = parsed[1].label;
-
-          timerConfigs[2].durationSeconds = parsed[2].durationSeconds;
-          timerConfigs[2].remainingSeconds = parsed[2].durationSeconds;
-          timerConfigs[2].label = parsed[2].label;
+          if (parsed[1]) {
+            timerConfigs[1].durationSeconds = parsed[1].durationSeconds;
+            timerConfigs[1].remainingSeconds = parsed[1].durationSeconds;
+            timerConfigs[1].label = parsed[1].label;
+          }
+          if (parsed[2]) {
+            timerConfigs[2].durationSeconds = parsed[2].durationSeconds;
+            timerConfigs[2].remainingSeconds = parsed[2].durationSeconds;
+            timerConfigs[2].label = parsed[2].label;
+          }
         } catch(e) {}
       }
 
       updateTimerUI(1);
       updateTimerUI(2);
 
+      renderYardRoads();
       renderTasks();
-      setupDragAndDrop();
       setupEventListeners();
-      setupChatEventListeners();
     }
 
-    // --- REALTIME CHAT ENGINE (PeerJS Implementation) ---
-    function setupChatEventListeners() {
-      chatLoginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const roomCode = chatRoomInput.value.trim();
-        const username = chatUsernameInput.value.trim();
-
-        if (!/^\d{3}$/.test(roomCode)) {
-          alert("Please enter a valid 3-digit room code.");
-          return;
-        }
-        if (!username) return;
-
-        currentRoomCode = roomCode;
-        currentUsername = username;
-
-        initializeChatPeer();
-      });
-
-      chatSendForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const text = chatInputMessage.value.trim();
-        if (!text) return;
-
-        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const msgObj = { type: 'msg', user: currentUsername, text: text, time: timeStr };
-
-        // Append locally
-        appendChatMessage(msgObj, true);
-
-        // Broadcast to peers
-        broadcastData(msgObj);
-
-        chatInputMessage.value = '';
-      });
-
-      leaveChatBtn.addEventListener('click', leaveChatRoom);
+    function saveYardData() {
+      localStorage.setItem('shiftmate_yard', JSON.stringify(yardData));
     }
 
-    function initializeChatPeer() {
-      const myPeerId = `shiftmate-room-${currentRoomCode}-${Math.floor(Math.random() * 100000)}`;
-      
-      updateChatStatus('Connecting...', 'bg-amber-500');
-
-      peer = new Peer(myPeerId);
-
-      peer.on('open', (id) => {
-        updateChatStatus('Connected', 'bg-emerald-500');
-        displayRoomCode.textContent = currentRoomCode;
-
-        chatLoginView.classList.add('hidden');
-        chatActiveView.classList.remove('hidden');
-
-        appendSystemMessage(`Joined Room #${currentRoomCode} as "${currentUsername}"`);
-
-        // Connect to hub or existing room peers
-        connectToRoomHub();
-      });
-
-      peer.on('connection', (conn) => {
-        setupPeerConnection(conn);
-      });
-
-      peer.on('error', (err) => {
-        console.error("PeerJS Error:", err);
-        updateChatStatus('Error', 'bg-red-500');
-      });
-    }
-
-    function connectToRoomHub() {
-      // Connect to fixed hub ID for this 3-digit room
-      const hubPeerId = `shiftmate-room-hub-${currentRoomCode}`;
-      
-      // Try becoming hub or connecting to hub
-      const hubConn = peer.connect(hubPeerId);
-      
-      hubConn.on('open', () => {
-        setupPeerConnection(hubConn);
-      });
-
-      hubConn.on('error', () => {
-        // If hub doesn't exist, create room listener
-      });
-    }
-
-    function setupPeerConnection(conn) {
-      peerConnections.push(conn);
-
-      conn.on('data', (data) => {
-        if (data.type === 'msg') {
-          appendChatMessage(data, false);
-        }
-      });
-
-      conn.on('close', () => {
-        peerConnections = peerConnections.filter(c => c !== conn);
-      });
-    }
-
-    function broadcastData(data) {
-      peerConnections.forEach(conn => {
-        if (conn.open) {
-          conn.send(data);
-        }
-      });
-    }
-
-    function appendChatMessage(msg, isSelf) {
-      const messageEl = document.createElement('div');
-      messageEl.className = `flex flex-col ${isSelf ? 'items-end' : 'items-start'}`;
-
-      messageEl.innerHTML = `
-        <div class="flex items-center space-x-1.5 mb-0.5">
-          <span class="font-bold text-[11px] ${isSelf ? 'text-blue-400' : 'text-emerald-400'}">${escapeHtml(msg.user)}</span>
-          <span class="text-[10px] text-slate-500">${msg.time}</span>
-        </div>
-        <div class="px-3 py-1.5 rounded-lg max-w-[85%] break-words ${isSelf ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 border border-slate-700/80 rounded-tl-none'}">
-          ${escapeHtml(msg.text)}
-        </div>
-      `;
-
-      chatMessagesContainer.appendChild(messageEl);
-      chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-    }
-
-    function appendSystemMessage(text) {
-      const sysEl = document.createElement('div');
-      sysEl.className = 'text-center my-1 text-[10px] text-slate-500 bg-slate-900/80 py-1 px-2 rounded border border-slate-800';
-      sysEl.textContent = text;
-      chatMessagesContainer.appendChild(sysEl);
-      chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-    }
-
-    function leaveChatRoom() {
-      if (peer) {
-        peer.destroy();
-        peer = null;
+    window.clearAllYardData = function() {
+      if (yardData.stabledUnits.length === 0) {
+        alert("The yard is already clear.");
+        return;
       }
-      peerConnections = [];
-      chatMessagesContainer.innerHTML = '';
-      chatActiveView.classList.add('hidden');
-      chatLoginView.classList.remove('hidden');
-      updateChatStatus('Logged Out', 'bg-amber-500');
+      if (confirm("Are you sure you want to clear ALL stabled trains and machines from all yard roads?")) {
+        yardData.stabledUnits = [];
+        saveYardData();
+        renderYardRoads();
+      }
+    };
+
+    function renderYardRoads() {
+      if (!yardRoadsContainer) return;
+      yardRoadsContainer.innerHTML = '';
+
+      const roadCountLabel = document.getElementById('roadCountLabel');
+      const yardCountBadge = document.getElementById('yardCountBadge');
+
+      if (roadCountLabel) roadCountLabel.textContent = yardData.totalRoads;
+      if (yardCountBadge) yardCountBadge.textContent = `${yardData.stabledUnits.length} Stabled`;
+
+      for (let i = yardData.totalRoads; i >= 1; i--) {
+        const roadCard = document.createElement('div');
+        roadCard.className = 'bg-slate-950/90 border border-slate-800 rounded-xl p-3.5 space-y-3 road-drop-zone transition shadow-sm hover:border-slate-700';
+        roadCard.setAttribute('data-road', i);
+
+        // Filter units for this road
+        const unitsOnRoad = yardData.stabledUnits.filter(u => u.roadIndex === i);
+
+        // Header for each road card
+        const roadHeader = document.createElement('div');
+        roadHeader.className = 'flex items-center justify-between border-b border-slate-800/80 pb-2';
+        roadHeader.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full ${unitsOnRoad.length > 0 ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-slate-600'}"></span>
+            <h3 class="font-bold text-sm text-slate-200">Road ${i}</h3>
+          </div>
+          <span class="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md ${unitsOnRoad.length > 0 ? 'bg-emerald-950 text-emerald-300 border border-emerald-800/60' : 'bg-slate-900 text-slate-500 border border-slate-800'}">
+            ${unitsOnRoad.length} Unit(s)
+          </span>
+        `;
+        roadCard.appendChild(roadHeader);
+
+        // Content Area: Horizontal Flex list of stabled rakes
+        const unitsContainer = document.createElement('div');
+        unitsContainer.className = 'flex flex-wrap gap-2 min-h-[42px] items-center p-1 rounded-lg bg-slate-900/40 border border-dashed border-slate-800/80';
+        unitsContainer.setAttribute('data-road-container', i);
+
+        if (unitsOnRoad.length === 0) {
+          unitsContainer.innerHTML = `
+            <div class="text-[11px] text-slate-500 italic py-1 px-2 w-full text-center">
+              Road Clear (Type below to stablise train/machine)
+            </div>
+          `;
+        } else {
+          unitsOnRoad.forEach(unit => {
+            const colorCategory = unit.color || autoDetectUnitCategory(unit.text);
+            const styleObj = COLOR_STYLES[colorCategory] || COLOR_STYLES.blue;
+
+            const rakePill = document.createElement('div');
+            rakePill.className = `yard-rake ${styleObj.bg} ${styleObj.border} border rounded-lg px-3 py-1.5 flex items-center space-x-2 cursor-grab text-xs font-semibold shadow-md active:cursor-grabbing transition hover:brightness-110`;
+            rakePill.setAttribute('draggable', 'true');
+            rakePill.setAttribute('data-id', unit.id);
+
+            let reminderBadge = '';
+            if (unit.reminderTime) {
+              reminderBadge = `
+                <span class="bg-amber-950/90 text-amber-300 border border-amber-800 text-[10px] px-1.5 py-0.2 rounded flex items-center gap-1 font-mono">
+                  <i class="fa-regular fa-bell"></i> ${unit.reminderTime}
+                </span>
+              `;
+            }
+
+            rakePill.innerHTML = `
+              <i class="fa-solid ${styleObj.icon} text-xs"></i>
+              <span class="${styleObj.text}">${escapeHtml(unit.text)}</span>
+              ${reminderBadge}
+              <i class="fa-solid fa-grip-vertical text-slate-400/80 text-[11px] ml-1"></i>
+            `;
+
+            rakePill.addEventListener('click', (e) => {
+              // Open modal unless drag operation took place
+              if (!rakePill.classList.contains('was-dragged')) {
+                openRakeModal(unit.id);
+              }
+            });
+
+            unitsContainer.appendChild(rakePill);
+          });
+        }
+        roadCard.appendChild(unitsContainer);
+
+        // Add Train Input Bar inside each Road card
+        const addForm = document.createElement('form');
+        addForm.className = 'flex items-center gap-2 pt-1 border-t border-slate-800/60';
+        addForm.innerHTML = `
+          <input type="text" id="roadInput_${i}" placeholder="+ Add train / loco (L31204) / machine..." 
+            class="flex-grow bg-slate-900 border border-slate-800 text-xs text-slate-100 px-3 py-1.5 rounded-lg focus:outline-none focus:border-blue-500 transition placeholder-slate-600 font-mono">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition active:scale-95 flex items-center space-x-1 whitespace-nowrap">
+            <i class="fa-solid fa-plus text-[10px]"></i>
+            <span>Add</span>
+          </button>
+        `;
+
+        addForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const inputEl = document.getElementById(`roadInput_${i}`);
+          if (!inputEl) return;
+          const val = inputEl.value.trim();
+          if (!val) return;
+
+          const detectedColor = autoDetectUnitCategory(val);
+
+          const newUnit = {
+            id: 'rake-' + Date.now() + '-' + Math.floor(Math.random()*1000),
+            roadIndex: i,
+            text: val,
+            color: detectedColor,
+            reminderTime: '',
+            alarmFired: false
+          };
+
+          yardData.stabledUnits.push(newUnit);
+          saveYardData();
+          renderYardRoads();
+        });
+
+        roadCard.appendChild(addForm);
+        yardRoadsContainer.appendChild(roadCard);
+      }
+
+      setupYardDragAndDrop();
     }
 
-    function updateChatStatus(text, bgClass) {
-      chatStatusBadge.innerHTML = `<span class="w-2 h-2 rounded-full ${bgClass}"></span><span>${text}</span>`;
+    /**
+     * DRAG AND DROP ENGINE FOR YARD UNITS
+     * Supports both reordering within the same road and moving across roads.
+     */
+    function setupYardDragAndDrop() {
+      const rakeCards = yardRoadsContainer.querySelectorAll('.yard-rake');
+      const dropZones = yardRoadsContainer.querySelectorAll('.road-drop-zone');
+      let draggedRakeId = null;
+
+      rakeCards.forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+          draggedRakeId = card.getAttribute('data-id');
+          card.classList.add('dragging');
+          card.classList.remove('was-dragged');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', draggedRakeId);
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          setTimeout(() => card.classList.remove('was-dragged'), 100);
+          draggedRakeId = null;
+        });
+
+        // Allow target drop on another unit pill to swap/reorder positions
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          card.classList.add('rake-drag-over');
+        });
+
+        card.addEventListener('dragleave', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          card.classList.remove('rake-drag-over');
+        });
+
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          card.classList.remove('rake-drag-over');
+
+          const targetId = card.getAttribute('data-id');
+          if (!draggedRakeId || draggedRakeId === targetId) return;
+
+          const draggedIdx = yardData.stabledUnits.findIndex(u => u.id === draggedRakeId);
+          const targetIdx = yardData.stabledUnits.findIndex(u => u.id === targetId);
+
+          if (draggedIdx !== -1 && targetIdx !== -1) {
+            const targetRoad = yardData.stabledUnits[targetIdx].roadIndex;
+            const [movedUnit] = yardData.stabledUnits.splice(draggedIdx, 1);
+            movedUnit.roadIndex = targetRoad;
+
+            // Insert at target index
+            yardData.stabledUnits.splice(targetIdx, 0, movedUnit);
+            saveYardData();
+            renderYardRoads();
+          }
+        });
+      });
+
+      // Drop zones on entire road cards
+      dropZones.forEach(zone => {
+        zone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          zone.classList.add('drag-over');
+        });
+
+        zone.addEventListener('dragleave', () => {
+          zone.classList.remove('drag-over');
+        });
+
+        zone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          zone.classList.remove('drag-over');
+          if (!draggedRakeId) return;
+
+          const targetRoad = parseInt(zone.getAttribute('data-road'), 10);
+          const unit = yardData.stabledUnits.find(u => u.id === draggedRakeId);
+
+          if (unit) {
+            unit.roadIndex = targetRoad;
+            saveYardData();
+            renderYardRoads();
+          }
+        });
+      });
     }
 
-    // --- TASK MANAGER LOGIC ---
+    function changeRoadCount(delta) {
+      const newTotal = yardData.totalRoads + delta;
+      if (newTotal >= 1 && newTotal <= 20) {
+        yardData.totalRoads = newTotal;
+
+        // Reassign units on roads higher than new total
+        yardData.stabledUnits.forEach(u => {
+          if (u.roadIndex > newTotal) {
+            u.roadIndex = newTotal;
+          }
+        });
+
+        saveYardData();
+        renderYardRoads();
+
+        const roadInputModal = document.getElementById('roadCountInput');
+        if (roadInputModal) roadInputModal.value = newTotal;
+      }
+    }
+
+    function openRakeModal(id) {
+      selectedRakeId = id;
+      const unit = yardData.stabledUnits.find(u => u.id === id);
+      if (!unit) return;
+
+      document.getElementById('rakeModalRoadLabel').textContent = `Road #${unit.roadIndex}`;
+      document.getElementById('rakeModalTitle').textContent = unit.text;
+
+      const statusEl = document.getElementById('rakeReminderStatus');
+      const timeTextEl = document.getElementById('rakeReminderTimeText');
+
+      if (unit.reminderTime) {
+        timeTextEl.textContent = unit.reminderTime;
+        statusEl.classList.remove('hidden');
+      } else {
+        statusEl.classList.add('hidden');
+      }
+
+      rakeActionModal.classList.remove('hidden');
+    }
+
+    function closeRakeModal() {
+      rakeActionModal.classList.add('hidden');
+      selectedRakeId = null;
+    }
+
+    window.triggerRakeAction = function(actionType) {
+      if (!selectedRakeId) return;
+      const unit = yardData.stabledUnits.find(u => u.id === selectedRakeId);
+      if (!unit) return;
+
+      if (actionType === 'release') {
+        if (confirm(`Clear "${unit.text}" from Road #${unit.roadIndex}?`)) {
+          yardData.stabledUnits = yardData.stabledUnits.filter(u => u.id !== selectedRakeId);
+          saveYardData();
+          renderYardRoads();
+          closeRakeModal();
+        }
+      } else if (actionType === 'move') {
+        const roadInput = prompt(`Enter target Road number (1 to ${yardData.totalRoads}):`, unit.roadIndex);
+        if (roadInput !== null) {
+          const target = parseInt(roadInput, 10);
+          if (!isNaN(target) && target >= 1 && target <= yardData.totalRoads) {
+            unit.roadIndex = target;
+            saveYardData();
+            renderYardRoads();
+            closeRakeModal();
+          } else {
+            alert(`Invalid Road number. Choose between 1 and ${yardData.totalRoads}.`);
+          }
+        }
+      } else if (actionType === 'reminder') {
+        const timeInput = prompt('Set Buzzer Alarm Time (24hr HH:MM format, e.g. 16:30):', unit.reminderTime || '');
+        if (timeInput !== null) {
+          if (timeInput === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(timeInput)) {
+            unit.reminderTime = timeInput;
+            unit.alarmFired = false;
+            saveYardData();
+            renderYardRoads();
+            closeRakeModal();
+          } else {
+            alert('Invalid time format. Please use HH:MM format (e.g. 16:30)');
+          }
+        }
+      } else if (actionType === 'edit') {
+        const newText = prompt('Edit Stabled Train / Loco / Machine text:', unit.text);
+        if (newText !== null && newText.trim() !== '') {
+          unit.text = newText.trim();
+          unit.color = autoDetectUnitCategory(unit.text);
+          saveYardData();
+          renderYardRoads();
+          closeRakeModal();
+        }
+      }
+    };
+
+    window.openRoadConfigModal = function() {
+      document.getElementById('roadCountInput').value = yardData.totalRoads;
+      roadConfigModal.classList.remove('hidden');
+    };
+
+    window.closeRoadConfigModal = function() {
+      roadConfigModal.classList.add('hidden');
+    };
+
+    window.saveRoadConfigFromInput = function() {
+      const val = parseInt(document.getElementById('roadCountInput').value, 10);
+      if (!isNaN(val) && val >= 1 && val <= 20) {
+        yardData.totalRoads = val;
+
+        yardData.stabledUnits.forEach(u => {
+          if (u.roadIndex > val) {
+            u.roadIndex = val;
+          }
+        });
+
+        saveYardData();
+        renderYardRoads();
+        closeRoadConfigModal();
+      } else {
+        alert('Please enter a valid road count between 1 and 20.');
+      }
+    };
+
+    // --- TASK MANAGER ENGINE ---
     function saveTasks() {
       localStorage.setItem('shiftmate_tasks', JSON.stringify(tasks));
     }
@@ -727,7 +1042,7 @@
       const pendingTasksCount = tasks.filter(t => !t.completed).length;
       const completedTasksCount = tasks.filter(t => t.completed).length;
 
-      taskCountBadge.textContent = pendingTasksCount;
+      if (taskCountBadge) taskCountBadge.textContent = pendingTasksCount;
 
       if (clearCompletedBtn) {
         if (completedTasksCount > 0) {
@@ -741,10 +1056,10 @@
 
       if (tasks.length === 0) {
         tasksContainer.innerHTML = `
-          <div class="text-center py-12 bg-slate-900 rounded-xl border border-dashed border-slate-800">
-            <i class="fa-solid fa-list-check text-4xl text-slate-600 mb-2"></i>
-            <p class="text-slate-400 font-medium text-sm">No active tasks in current shift timeline.</p>
-            <p class="text-slate-500 text-xs">Add a task above using the task input form.</p>
+          <div class="text-center py-8 bg-slate-900 rounded-xl border border-dashed border-slate-800">
+            <i class="fa-solid fa-list-check text-2xl text-slate-600 mb-2"></i>
+            <p class="text-slate-400 font-medium text-xs">No active duty tasks.</p>
+            <p class="text-slate-500 text-[11px]">Add tasks using the form above.</p>
           </div>
         `;
         return;
@@ -754,15 +1069,14 @@
 
       sortedTasks.forEach((task) => {
         const card = document.createElement('div');
-        card.className = `task-card bg-slate-900 rounded-xl p-3.5 border ${task.completed ? 'border-slate-800/70 bg-slate-900/40 opacity-60' : 'border-slate-800'} flex items-center justify-between gap-3 cursor-grab shadow-sm`;
+        card.className = `task-card bg-slate-900 rounded-xl p-3 border ${task.completed ? 'border-slate-800/70 bg-slate-900/40 opacity-60' : 'border-slate-800'} flex items-center justify-between gap-3 cursor-grab shadow-sm`;
         card.setAttribute('draggable', 'true');
         card.setAttribute('data-id', task.id);
 
         let reminderBadgeHtml = '';
         if (task.reminderTime) {
-          const isFired = task.alarmFired;
           reminderBadgeHtml = `
-            <span class="inline-flex items-center text-xs px-2 py-0.5 rounded ${isFired ? 'bg-amber-950 text-amber-300 border border-amber-800/80 font-medium' : 'bg-blue-950 text-blue-300 border border-blue-800/80'}">
+            <span class="inline-flex items-center text-[11px] px-2 py-0.5 rounded ${task.alarmFired ? 'bg-amber-950 text-amber-300 border border-amber-800/80 font-medium' : 'bg-blue-950 text-blue-300 border border-blue-800/80'}">
               <i class="fa-regular fa-clock mr-1 text-[10px]"></i>
               ${task.reminderTime}
             </span>
@@ -770,19 +1084,19 @@
         }
 
         card.innerHTML = `
-          <div class="flex items-center space-x-3 flex-grow min-w-0">
-            <div class="text-slate-600 hover:text-slate-400 cursor-grab px-1">
+          <div class="flex items-center space-x-2.5 flex-grow min-w-0">
+            <div class="text-slate-600 hover:text-slate-400 cursor-grab px-0.5 text-xs">
               <i class="fa-solid fa-grip-vertical"></i>
             </div>
 
-            <button onclick="toggleTaskComplete('${task.id}')" class="text-lg focus:outline-none flex-shrink-0">
+            <button onclick="toggleTaskComplete('${task.id}')" class="text-base focus:outline-none flex-shrink-0">
               ${task.completed ? 
                 '<i class="fa-solid fa-circle-check text-emerald-500"></i>' : 
                 '<i class="fa-regular fa-circle text-slate-600 hover:text-slate-400"></i>'}
             </button>
 
             <div class="flex flex-col min-w-0">
-              <span class="text-sm font-medium ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'} break-words">
+              <span class="text-xs font-medium ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'} break-words">
                 ${escapeHtml(task.text)}
               </span>
               <div class="flex items-center space-x-2 mt-0.5">
@@ -792,10 +1106,10 @@
           </div>
 
           <div class="flex items-center space-x-1 flex-shrink-0">
-            <button onclick="editReminder('${task.id}')" class="p-2 text-slate-500 hover:text-blue-400 rounded-lg hover:bg-slate-800 text-xs transition" title="Edit Alarm">
+            <button onclick="editReminder('${task.id}')" class="p-1.5 text-slate-500 hover:text-blue-400 rounded-lg hover:bg-slate-800 text-xs transition" title="Edit Reminder">
               <i class="fa-regular fa-bell"></i>
             </button>
-            <button onclick="deleteTask('${task.id}')" class="p-2 text-slate-500 hover:text-red-400 rounded-lg hover:bg-slate-800 text-xs transition" title="Delete Task">
+            <button onclick="deleteTask('${task.id}')" class="p-1.5 text-slate-500 hover:text-red-400 rounded-lg hover:bg-slate-800 text-xs transition" title="Delete Task">
               <i class="fa-regular fa-trash-can"></i>
             </button>
           </div>
@@ -804,7 +1118,7 @@
         tasksContainer.appendChild(card);
       });
 
-      setupDragAndDrop();
+      setupTaskDragAndDrop();
     }
 
     function escapeHtml(str) {
@@ -877,27 +1191,42 @@
         alarmModal.classList.add('hidden');
         stopAlarmSound();
         activeAlarmTaskId = null;
+        activeAlarmRakeId = null;
       });
 
       snoozeAlarmBtn.addEventListener('click', () => {
-        if (!activeAlarmTaskId) return;
-        const task = tasks.find(t => t.id === activeAlarmTaskId);
-        if (task) {
-          const now = new Date();
-          now.setMinutes(now.getMinutes() + 5);
-          const h = String(now.getHours()).padStart(2, '0');
-          const m = String(now.getMinutes()).padStart(2, '0');
-          task.reminderTime = `${h}:${m}`;
-          task.alarmFired = false;
-          saveTasks();
-          renderTasks();
+        if (activeAlarmTaskId) {
+          const task = tasks.find(t => t.id === activeAlarmTaskId);
+          if (task) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 5);
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            task.reminderTime = `${h}:${m}`;
+            task.alarmFired = false;
+            saveTasks();
+            renderTasks();
+          }
+        } else if (activeAlarmRakeId) {
+          const unit = yardData.stabledUnits.find(u => u.id === activeAlarmRakeId);
+          if (unit) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 5);
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            unit.reminderTime = `${h}:${m}`;
+            unit.alarmFired = false;
+            saveYardData();
+            renderYardRoads();
+          }
         }
         alarmModal.classList.add('hidden');
         stopAlarmSound();
         activeAlarmTaskId = null;
+        activeAlarmRakeId = null;
       });
 
-      // Shift Summary Handlers
+      // SHIFT HANDOVER GENERATOR WITH LIVE YARD POSITION REPORT
       generateSummaryBtn.addEventListener('click', () => {
         const now = new Date();
         const dateString = now.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
@@ -906,11 +1235,22 @@
         const pendingTasks = tasks.filter(t => !t.completed);
 
         let summaryText = `======================================\n`;
-        summaryText += `    SHIFTMATE DUTY HANDOVER REPORT    \n`;
+        summaryText += `   SHIFTMATE DUTY & YARD HANDOVER REPORT \n`;
         summaryText += `======================================\n`;
         summaryText += `Generated: ${dateString} @ ${timeString}\n\n`;
 
-        summaryText += `--- PENDING TASKS (${pendingTasks.length}) ---\n`;
+        summaryText += `--- STATION YARD POSITION (${yardData.stabledUnits.length} Stabled) ---\n`;
+        for (let i = yardData.totalRoads; i >= 1; i--) {
+          const unitsOnRoad = yardData.stabledUnits.filter(u => u.roadIndex === i);
+          if (unitsOnRoad.length === 0) {
+            summaryText += `Road ${i}: Clear\n`;
+          } else {
+            const names = unitsOnRoad.map(u => u.text).join(' | ');
+            summaryText += `Road ${i}: ${names}\n`;
+          }
+        }
+
+        summaryText += `\n--- PENDING DUTY TASKS (${pendingTasks.length}) ---\n`;
         if (pendingTasks.length === 0) {
           summaryText += `[✓] All duty tasks have been cleared for this shift.\n`;
         } else {
@@ -949,47 +1289,63 @@
       const todayKey = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
       const currentDayOfWeek = now.getDay();
 
+      // Rule Alarms
       if (hoursStr === '16' && minutesStr === '00' && secondsStr === '00' && triggeredPresetsToday.p16 !== todayKey) {
         triggeredPresetsToday.p16 = todayKey;
-        triggerAlarm('standard time', 'Automatic Scheduled Duty Rule (16:00)');
+        triggerAlarm('Standard Time Rule (16:00)', 'Scheduled Automatic Duty Rule');
       }
 
       if (hoursStr === '00' && minutesStr === '00' && secondsStr === '00' && triggeredPresetsToday.p00 !== todayKey) {
         triggeredPresetsToday.p00 = todayKey;
-        triggerAlarm('0000hrs line', 'Automatic Scheduled Duty Rule (00:00)');
+        triggerAlarm('0000hrs Line Rule (00:00)', 'Scheduled Automatic Duty Rule');
       }
 
       if (currentDayOfWeek === 0 && hoursStr === '23' && minutesStr === '00' && secondsStr === '00' && triggeredPresetsToday.pSun !== todayKey) {
         triggeredPresetsToday.pSun = todayKey;
-        triggerAlarm('caution bf', 'Automatic Scheduled Duty Rule (Sunday 23:00)');
+        triggerAlarm('Caution BF Rule (Sunday 23:00)', 'Scheduled Automatic Duty Rule');
       }
 
+      // Check Tasks Alarms
       tasks.forEach(task => {
         if (task.reminderTime && !task.completed && !task.alarmFired) {
           if (task.reminderTime === timeShort && secondsStr === '00') {
-            triggerAlarm(task.text, `Scheduled for ${task.reminderTime}`, task.id);
+            triggerAlarm(task.text, `Scheduled Task Alert (${task.reminderTime})`, task.id, null);
             task.alarmFired = true;
             saveTasks();
             renderTasks();
           }
         }
       });
+
+      // Check Yard Reminders Alarms
+      yardData.stabledUnits.forEach(unit => {
+        if (unit.reminderTime && !unit.alarmFired) {
+          if (unit.reminderTime === timeShort && secondsStr === '00') {
+            triggerAlarm(`${unit.text} (Road #${unit.roadIndex})`, `Yard Stabled Alarm (${unit.reminderTime})`, null, unit.id);
+            unit.alarmFired = true;
+            saveYardData();
+            renderYardRoads();
+          }
+        }
+      });
     }
 
-    function triggerAlarm(titleText, timestampText, taskId = null) {
+    function triggerAlarm(titleText, timestampText, taskId = null, rakeId = null) {
       if (!alarmModal) return;
       activeAlarmTaskId = taskId;
-      alarmTitleText.textContent = taskId ? "TASK REMINDER ALERT!" : "PRESET DUTY ALARM ALERT!";
+      activeAlarmRakeId = rakeId;
+
+      alarmTitleText.textContent = rakeId ? "YARD STABLED BUZZER ALARM!" : (taskId ? "DUTY TASK REMINDER!" : "AUTOMATIC RULE ALARM!");
       alarmTaskText.textContent = titleText;
       alarmTimestamp.textContent = timestampText;
 
-      snoozeAlarmBtn.style.display = taskId ? 'block' : 'none';
+      snoozeAlarmBtn.style.display = (taskId || rakeId) ? 'block' : 'none';
 
       alarmModal.classList.remove('hidden');
       startAlarmSound();
     }
 
-    // --- COUNTDOWN TIMER LOGIC ---
+    // --- COUNTDOWN TIMERS ENGINE ---
     function formatMinutesSeconds(sec) {
       const m = Math.floor(sec / 60);
       const s = sec % 60;
@@ -1041,7 +1397,7 @@
             clearInterval(config.interval);
             config.running = false;
             updateTimerUI(id);
-            triggerAlarm(`Timer ${id} (${formatMinutesSeconds(config.durationSeconds)}) Elapsed!`, "Quick Timer Complete");
+            triggerAlarm(`Timer ${id} (${formatMinutesSeconds(config.durationSeconds)}) Complete!`, "Quick Timer Elapsed");
           }
         }, 1000);
       }
@@ -1060,7 +1416,7 @@
       const currentMin = Math.floor(config.durationSeconds / 60);
       const currentSec = config.durationSeconds % 60;
 
-      const input = prompt(`Enter new preset duration for Timer ${id} (Format MM:SS, e.g. 02:30 or 04:00):`, `${String(currentMin).padStart(2, '0')}:${String(currentSec).padStart(2, '0')}`);
+      const input = prompt(`Enter new duration for Timer ${id} (MM:SS format):`, `${String(currentMin).padStart(2, '0')}:${String(currentSec).padStart(2, '0')}`);
 
       if (input !== null) {
         const parts = input.trim().split(':');
@@ -1079,12 +1435,12 @@
             return;
           }
         }
-        alert('Invalid time format. Please enter format as MM:SS (e.g. 02:30 or 05:00)');
+        alert('Invalid format. Please use MM:SS (e.g. 02:30 or 05:00)');
       }
     };
 
-    // --- DRAG AND DROP REORDERING ---
-    function setupDragAndDrop() {
+    // --- TASK REORDERING DRAG & DROP ---
+    function setupTaskDragAndDrop() {
       if (!tasksContainer) return;
       const cards = tasksContainer.querySelectorAll('.task-card');
       let draggedCard = null;
@@ -1153,3 +1509,4 @@
   </script>
 </body>
 </html>
+
